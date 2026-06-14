@@ -9,7 +9,7 @@ using JkaProtocolProxy.OpenJk;
 const int GamePort = 29070;
 
 // Target the actual WAN/Internet IP of the remote game server you observed in Wireshark
-const string RemoteGameServerIp = "100.26.56.189";
+const string RemoteGameServerIp = "135.148.31.103";
 IPEndPoint remoteServerEndpoint = new IPEndPoint(IPAddress.Parse(RemoteGameServerIp), GamePort);
 
 // Bind a standard socket to GamePort on ALL local interfaces (0.0.0.0), catching the Hotspot stream
@@ -82,8 +82,35 @@ static byte[] ModifyPacketInline(byte[] packet)
     if (commandText.StartsWith("connect", StringComparison.Ordinal))
     {
         Console.ForegroundColor = ConsoleColor.DarkYellow;
-        Console.WriteLine($"[Observe] Intercepted Connect Request: {commandText.Trim()}");
-        // To-Do: decode, change protocol, re-encode
+        Console.WriteLine($"[Observe] Intercepted Connect Request:");
+        Helper.PrintHexDump(packet);
+
+        /////////////// Send to OpenJK-console to parse huffman, change protocol, and put back on the wire
+        // 1. split packet, header from encoded huffman parts.
+        byte[] payloadArray = new byte[0];
+        byte[] headerArray = new byte[0];
+
+        byte[] pattern = { 0xff, 0xff, 0xff, 0xff };
+        int splitIndex = Helper.FindPattern(packet, pattern);
+
+        if (splitIndex != -1)
+        {
+            // header of UDP packet
+            headerArray = new byte[splitIndex];
+            Array.Copy(packet, 0, headerArray, 0, splitIndex);
+
+            // actual huffman encoded packet
+            payloadArray = new byte[packet.Length - splitIndex];
+            Array.Copy(packet, splitIndex, payloadArray, 0, packet.Length - splitIndex);
+
+            // Output for verification
+            Console.WriteLine($"Header Length: {headerArray.Length}");
+            Console.WriteLine($"Payload Length: {payloadArray.Length}");
+        }
+        // 2. send huffman part to OpenJK-console, response should be modified protocol and re-encoded
+        byte[] decodedPacket = OpenJKNetworkBridge.ModifyAndReconstructPacket(payloadArray);
+        packet = headerArray.Concat(decodedPacket).ToArray();
+
         Console.ResetColor();
         return packet;
     }
