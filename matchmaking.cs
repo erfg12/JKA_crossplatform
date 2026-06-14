@@ -18,7 +18,7 @@ class MatchmakingRedirector
         // ===================================================================
         //  CONFIGURATION VARIABLES
         // ===================================================================
-        string targetIpAddress = "192.168.137.1";
+        string targetIpAddress = "192.168.0.10";
         ushort targetPort = 29070;
         // ===================================================================
 
@@ -122,13 +122,13 @@ class MatchmakingRedirector
 
                     if (payloadText.StartsWith(TargetRequestString, StringComparison.OrdinalIgnoreCase))
                     {
-                        Console.WriteLine($"[UDP - MATCH] Handshaking request from console client: {clientEndPoint}");
+                        //Console.WriteLine($"[UDP - MATCH] Handshaking request from console client: {clientEndPoint}");
 
                         byte[] responseBytes = BuildResponsePayload(targetIp, targetPort);
                         await udpClient.SendAsync(responseBytes, responseBytes.Length, clientEndPoint);
 
-                        Console.WriteLine($"[UDP - REPLY] Dispatched corrected matchmaking redirect payload to {clientEndPoint}.\n");
-                        Console.WriteLine(new string('-', 80));
+                        //Console.WriteLine($"[UDP - REPLY] Dispatched corrected matchmaking redirect payload to {clientEndPoint}.\n");
+                        //Console.WriteLine(new string('-', 80));
                     }
                 }
             }
