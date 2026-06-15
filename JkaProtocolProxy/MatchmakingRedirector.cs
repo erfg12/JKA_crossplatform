@@ -1,44 +1,16 @@
-using System;
-using System.IO;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 class MatchmakingRedirector
 {
-    private const int UdpListenPort = 30000;
-    private const int HttpListenPort = 80;
-
     private static readonly byte[] OobMarker = { 0xFF, 0xFF, 0xFF, 0xFF };
     private const string TargetRequestString = "startmatchmaking";
-
-    static async Task Main(string[] args)
-    {
-        // ===================================================================
-        //  CONFIGURATION VARIABLES
-        // ===================================================================
-        string targetIpAddress = "192.168.0.10";
-        ushort targetPort = 29070;
-        // ===================================================================
-
-        Console.WriteLine($"[INIT] Starting Multi-Protocol Redirector Engine...");
-        Console.WriteLine($"[INIT] UDP Target Destination: {targetIpAddress}:{targetPort}");
-
-        // Spin up the HTTP Listener background task
-        Task httpTask = StartHttpListenerAsync(HttpListenPort);
-
-        // Spin up the UDP Listener background task
-        Task udpTask = StartUdpListenerAsync(UdpListenPort, targetIpAddress, targetPort);
-
-        // Keep the application alive running both servers concurrently
-        await Task.WhenAll(httpTask, udpTask);
-    }
 
     /// <summary>
     /// Asynchronously listens for standard HTTP requests on Port 80 and answers with a 200 OK status.
     /// </summary>
-    private static async Task StartHttpListenerAsync(int port)
+    public static async Task StartHealthListener(int port)
     {
         if (!HttpListener.IsSupported)
         {
@@ -95,7 +67,7 @@ class MatchmakingRedirector
     /// <summary>
     /// Asynchronously handles the JKA UDP matchmaking redirection loop.
     /// </summary>
-    private static async Task StartUdpListenerAsync(int listenPort, string targetIp, ushort targetPort)
+    public static async Task StartUdpListenerAsync(int listenPort, string targetIp, ushort targetPort)
     {
         try
         {
@@ -122,12 +94,12 @@ class MatchmakingRedirector
 
                     if (payloadText.StartsWith(TargetRequestString, StringComparison.OrdinalIgnoreCase))
                     {
-                        //Console.WriteLine($"[UDP - MATCH] Handshaking request from console client: {clientEndPoint}");
+                        Console.WriteLine($"[UDP - MATCH] Handshaking request from console client: {clientEndPoint}");
 
                         byte[] responseBytes = BuildResponsePayload(targetIp, targetPort);
                         await udpClient.SendAsync(responseBytes, responseBytes.Length, clientEndPoint);
 
-                        //Console.WriteLine($"[UDP - REPLY] Dispatched corrected matchmaking redirect payload to {clientEndPoint}.\n");
+                        Console.WriteLine($"[UDP - REPLY] Dispatched corrected matchmaking redirect payload to {clientEndPoint}.\n");
                         //Console.WriteLine(new string('-', 80));
                     }
                 }
