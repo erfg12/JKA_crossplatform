@@ -1,25 +1,28 @@
-﻿using System.Threading;
+﻿using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 
 class Program
 {
     // ===================================================================
     //  CONFIGURATION VARIABLES
     // ===================================================================
-    // OpenJK-console target destination (where the proxy will forward packets to)
-    public static string OpenJKDedIp = "192.168.0.10";      // should match this computer's IP
-    public static ushort OpenJKDedPort = 29070;             // this is the port to listen for, should stay at 29070
-
-    // matchmaking server settings
-    public static int MatchMakingServerPort = 30000;        // match making port to listen for incoming packets from the game console
-    public static int MatchMakingServerHealthPort = 80;     // health server to ping back status 200
-
-    // PC game server to join
+    // Pick a server from https://serverlist.jkhub.org/#colGamename=1&colJK2MV=0&colVersion=0&displayFilters=0&autoRefresh=0&jk2version=1.04&jkaversion=1.01&sinversion=1.13&theme=dark&sortReverse=0&serverInfoMode=0&game=jka&sortBy=hostname&filterString=
     public static string PCGameServerIp = "135.125.145.49"; // game server IP address (can be changed to any PC server you want to join)
     public static int PCGameServerPort = 29070;             // game server port
     // ===================================================================
 
+    public static string GetLocalIP()
+    {
+        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        socket.Connect("8.8.8.8", 80); // Doesn't actually send traffic
+        return ((IPEndPoint)socket.LocalEndPoint!).Address.ToString();
+    }
+
     static async Task Main(string[] args)
     {
+        FirewallManager.OpenPorts();
+
         // Catch anything that escapes to the top level - log it but never crash
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
@@ -32,20 +35,22 @@ class Program
         };
 
         // Intercept Ctrl+C - warn but keep running
-        Console.CancelKeyPress += (sender, e) =>
-        {
-            e.Cancel = true; // do NOT exit
-            LogWarning("Ctrl+C intercepted - proxy is keeping alive. Kill via Task Manager if needed.");
-        };
+        // Console.CancelKeyPress += (sender, e) =>
+        // {
+        //     e.Cancel = true; // do NOT exit
+        //     LogWarning("Ctrl+C intercepted - proxy is keeping alive. Kill via Task Manager if needed.");
+        // };
+
+        var myIp = GetLocalIP();
 
         Console.WriteLine($"[INIT] Starting Multi-Protocol Redirector Engine...");
-        Console.WriteLine($"[INIT] UDP Redirect To: {OpenJKDedIp}:{OpenJKDedPort}");
+        Console.WriteLine($"[INIT] UDP Redirect To: {myIp}:29070");
 
         // Run all three services with auto-restart on failure
         await Task.WhenAll(
             RunForeverAsync("Game Proxy", RunGameProxyAsync),
-            RunForeverAsync("HTTP Health", () => MatchmakingRedirector.StartHealthListener(MatchMakingServerHealthPort)),
-            RunForeverAsync("UDP Matchmaking", () => MatchmakingRedirector.StartUdpListenerAsync(MatchMakingServerPort, OpenJKDedIp, OpenJKDedPort))
+            RunForeverAsync("HTTP Health", () => MatchmakingRedirector.StartHealthListener(80)),
+            RunForeverAsync("UDP Matchmaking", () => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070))
         );
     }
 

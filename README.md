@@ -14,7 +14,7 @@ The PC game server must be using a special build of openjkded and running a C# s
 ### How-To Use
 
 1. Install .NET 10, and Technitium.
-2. Open firewall ports `53` (TCP & UDP), `80` (TCP) and `29070` (UDP)
+2. Open firewall ports `53` (TCP & UDP), `80` (TCP), `29070` (UDP), `30000` (UDP)
 3. Set up Technitium / NAMO - see below
 4. Set up your game console - see below
 5. Edit the `Program.cs` variables to match your game server's IP:Port and your ipconfig/ifconfig IP.
