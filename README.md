@@ -1,8 +1,6 @@
 ### About JKA Crossplatform
 
-This lets your game console version of JKA (Switch, PS4) connect to a PC game server.
-
-The PC game server must be using a special build of openjkded and running a C# script to send a special matchmaking response packet.
+This lets your game console version of JKA (Switch/Switch 2, PS4/PS5) connect to a PC game server.
 
 ### Requirements
 
