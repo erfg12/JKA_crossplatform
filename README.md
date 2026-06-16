@@ -11,12 +11,12 @@ This lets your game console version of JKA (Switch/Switch 2, PS4/PS5) connect to
 
 ### How-To Use
 
-1. Install .NET 8+, and Technitium.
+1. Install .NET 8+, DNS server software and Python w/ Arpspoof.
 2. Set up Technitium / NAMO - see below
 3. Set up your game console - see below
 4. Edit the `Program.cs` variables to match your game server's IP:Port and your ipconfig/ifconfig IP.
 5. Run MacOS:`sudo dotnet run` or Windows:`dotnet run` in cmd with Administrative privileges.
-6. Run python arpspoof with `arpspoof (GAME CONSOLE IP) (GATEWAY IP) -s -t 1`
+6. Run python arpspoof with `arpspoof (GAME CONSOLE IP) (GATEWAY IP) -s -t 1` (ex: `arpspoof 192.168.0.1 192.168.0.99 -s -t 1`)
 7. Now you can player your JKA console game on a PC game server by selecting `Multiplayer` > `Play` > `Matchmaking` and selecting the game type that matches the PC game server
 
 ### Setting Up Your Game Console
