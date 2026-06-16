@@ -32,7 +32,7 @@ class MatchmakingRedirector
                 HttpListenerRequest request = context.Request;
                 HttpListenerResponse response = context.Response;
 
-                Console.WriteLine($"[HTTP - INBOUND] Intercepted Web Request!");
+                Console.WriteLine($"[HTTP - INBOUND] Intercepted Health Check Request!");
                 Console.WriteLine($"  -> URL Requested: {request.Url}");
                 Console.WriteLine($"  -> Remote Client: {request.RemoteEndPoint}");
 

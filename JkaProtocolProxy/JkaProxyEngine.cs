@@ -1,50 +1,79 @@
-﻿using System;
+﻿using JkaProtocolProxy.Networking;
+using JkaProtocolProxy.OpenJk;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using JkaProtocolProxy.Networking;
-using JkaProtocolProxy.OpenJk;
 
 public class JkaProxyEngine
 {
     private readonly IPEndPoint _remoteServerEndpoint;
     private readonly UdpClient _proxyListener;
 
-    // Thread-safe atomic storage for the dynamic Console Endpoint
     private IPEndPoint? _gameConsoleClientEndpoint;
+    private DateTime _lastConsoleActivity = DateTime.MinValue;
     private readonly object _endpointLock = new();
+
+    private static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(30);
 
     public JkaProxyEngine()
     {
         _remoteServerEndpoint = new IPEndPoint(IPAddress.Parse(Program.PCGameServerIp), Program.PCGameServerPort);
-
-        // Bind to all local interfaces (0.0.0.0) on the designated game port
         _proxyListener = new UdpClient(Program.PCGameServerPort);
     }
 
     public async Task RunProxyLoopAsync(CancellationToken cancellationToken)
     {
+        // Background timeout watcher
+        _ = Task.Run(async () =>
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(5000, cancellationToken);
+                    lock (_endpointLock)
+                    {
+                        if (_gameConsoleClientEndpoint != null &&
+                            DateTime.UtcNow - _lastConsoleActivity > ClientTimeout)
+                        {
+                            Console.WriteLine($"[Proxy] Console client {_gameConsoleClientEndpoint} timed out - clearing endpoint.");
+                            _gameConsoleClientEndpoint = null;
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }, cancellationToken);
+
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                // Receive incoming UDP datagram packets from any source
                 UdpReceiveResult receiveResult = await _proxyListener.ReceiveAsync(cancellationToken);
                 byte[] packetBuffer = receiveResult.Buffer;
                 IPEndPoint senderEndpoint = receiveResult.RemoteEndPoint;
 
                 if (!senderEndpoint.Address.Equals(_remoteServerEndpoint.Address))
                 {
-                    // --- DIRECTION A: TRAFFIC FROM GAME CONSOLE -> GOING TO SERVER ---
-                    lock (_endpointLock) 
+                    // --- DIRECTION A: CONSOLE -> SERVER ---
+                    lock (_endpointLock)
                     {
-                        _gameConsoleClientEndpoint = senderEndpoint;
+                        if (_gameConsoleClientEndpoint == null ||
+                            !_gameConsoleClientEndpoint.Equals(senderEndpoint))
+                        {
+                            Console.WriteLine($"[Proxy] Console client connected: {senderEndpoint}");
+                            _gameConsoleClientEndpoint = senderEndpoint;
+                        }
+                        _lastConsoleActivity = DateTime.UtcNow;
                     }
 
-                    // Process modification in a worker pool thread context
                     _ = Task.Run(async () =>
                     {
                         try
@@ -60,7 +89,7 @@ public class JkaProxyEngine
                 }
                 else
                 {
-                    // --- DIRECTION B: TRAFFIC FROM SERVER -> GOING BACK TO GAME CONSOLE ---
+                    // --- DIRECTION B: SERVER -> CONSOLE ---
                     IPEndPoint? targetConsole;
                     lock (_endpointLock)
                     {
@@ -69,12 +98,19 @@ public class JkaProxyEngine
 
                     if (targetConsole != null)
                     {
-                        // Fire-and-forget sending back to console so receiver loop isn't delayed
                         _ = Task.Run(async () =>
                         {
                             try
                             {
                                 await _proxyListener.SendAsync(packetBuffer, packetBuffer.Length, targetConsole);
+                            }
+                            catch (SocketException ex)
+                            {
+                                LogNetworkError("Pipeline B - Console unreachable, clearing endpoint", ex.Message);
+                                lock (_endpointLock)
+                                {
+                                    _gameConsoleClientEndpoint = null;
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -82,11 +118,22 @@ public class JkaProxyEngine
                             }
                         }, cancellationToken);
                     }
+                    else
+                    {
+                        Console.WriteLine("[Proxy] Dropping server packet - no active console client.");
+                    }
                 }
             }
             catch (OperationCanceledException)
             {
-                break; // Graceful shutdown requested
+                break;
+            }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                // Windows ICMP "port unreachable" bubbling up as a SocketException - safe to ignore
+                // This happens when a UDP packet is sent to a port with no listener
+                Console.WriteLine("[Proxy] Remote host rejected a packet (ICMP unreachable) - continuing...");
+                continue;
             }
             catch (Exception ex)
             {
@@ -95,10 +142,27 @@ public class JkaProxyEngine
         }
     }
 
+    public static byte[] SetUserinfo(byte[] packet, string userinfo)
+    {
+        int commandEnd = 4; // skip FF FF FF FF
+        while (commandEnd < packet.Length && packet[commandEnd] != 0x20)
+            commandEnd++;
+        commandEnd++; // skip space after "connect"
+
+        byte[] raw = System.Text.Encoding.Latin1.GetBytes(userinfo);
+        byte[] compressed = JKHuffman.Compress(raw);
+
+        byte[] result = new byte[commandEnd + compressed.Length];
+        Array.Copy(packet, 0, result, 0, commandEnd);
+        Array.Copy(compressed, 0, result, commandEnd, compressed.Length);
+        return result;
+    }
+
     private static byte[] ModifyPacketInline(byte[] packet)
     {
-        // 1. OOB Validation Guard
-        if (packet.Length < 5 || packet[0] != 0xFF || packet[1] != 0xFF || packet[2] != 0xFF || packet[3] != 0xFF)
+        if (packet.Length < 5 ||
+            packet[0] != 0xFF || packet[1] != 0xFF ||
+            packet[2] != 0xFF || packet[3] != 0xFF)
         {
             return packet;
         }
@@ -111,7 +175,6 @@ public class JkaProxyEngine
 
         if (commandText.StartsWith("connect", StringComparison.Ordinal))
         {
-            // Thread-safe console log isolating the hex-dump payload 
             lock (Console.Out)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
@@ -120,23 +183,18 @@ public class JkaProxyEngine
                 Console.ResetColor();
             }
 
-            byte[] payloadArray = Array.Empty<byte>();
-            byte[] headerArray = Array.Empty<byte>();
-            byte[] pattern = { 0xff, 0xff, 0xff, 0xff };
+            var decodedUserInfo = ConnectPacket.GetUserinfo(packet);
+            Console.WriteLine($"[Before]: {decodedUserInfo}");
 
-            int splitIndex = Helper.FindPattern(packet, pattern);
-            if (splitIndex != -1)
-            {
-                headerArray = new byte[splitIndex];
-                Array.Copy(packet, 0, headerArray, 0, splitIndex);
+            string? modified = decodedUserInfo?.Replace("\\protocol\\4007", "\\protocol\\26");
+            Console.WriteLine($"[After]:  {modified}");
 
-                payloadArray = new byte[packet.Length - splitIndex];
-                Array.Copy(packet, splitIndex, payloadArray, 0, packet.Length - splitIndex);
-            }
+            byte[] result = packet;
+            if (!string.IsNullOrEmpty(modified))
+                result = ConnectPacket.SetUserinfo(packet, modified);
 
-            // Invoke Huffman modifications safely via bridge abstraction
-            byte[] decodedPacket = OpenJKNetworkBridge.ModifyAndReconstructPacket(payloadArray);
-            return headerArray.Concat(decodedPacket).ToArray();
+            Helper.PrintHexDump(result);
+            return result;
         }
 
         return packet;

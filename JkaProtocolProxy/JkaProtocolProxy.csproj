@@ -8,6 +8,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SupportedOSPlatformVersion>6.0.6000</SupportedOSPlatformVersion>
     <DefaultItemExcludes>$(DefaultItemExcludes);JkaProtocolProxy.Tests/**</DefaultItemExcludes>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
