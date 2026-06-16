@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System;
 
 public static class FirewallManager
 {
@@ -26,11 +27,32 @@ public static class FirewallManager
 
     private static void ApplyWindows()
     {
+        // Load the Windows Firewall Policy Manager via COM
+        Type firewallPolicyType = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
+        dynamic firewallPolicy = Activator.CreateInstance(firewallPolicyType);
+        dynamic firewallRules = firewallPolicy.Rules;
+
+        string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+
         foreach (var rule in Rules)
         {
-            var name = $"OpenJK-{rule.Protocol}-{rule.Port}";
-            RunProcess("netsh", $"advfirewall firewall add rule name=\"{name}\" dir=in action=allow protocol={rule.Protocol} localport={rule.Port}");
-            RunProcess("netsh", $"advfirewall firewall add rule name=\"{name}-out\" dir=out action=allow protocol={rule.Protocol} localport={rule.Port}");
+            var name = $"JkaProtocolProxy-{rule.Protocol}-{rule.Port}";
+
+            // Create a modern rule
+            Type ruleType = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            dynamic newRule = Activator.CreateInstance(ruleType);
+
+            newRule.Name = name;
+            newRule.Description = "Inbound rule for JkaProtocolProxy Server";
+            newRule.ApplicationName = exePath;
+            newRule.Protocol = rule.Protocol.ToString().ToUpper() == "UDP" ? 17 : 6; // 17 = UDP, 6 = TCP
+            newRule.LocalPorts = rule.Port.ToString();
+            newRule.Direction = 1; // 1 = NET_FW_RULE_DIR_IN
+            newRule.Enabled = true;
+            newRule.Profiles = int.MaxValue; // All profiles (Public, Private, Domain)
+            newRule.Action = 1; // 1 = NET_FW_ACTION_ALLOW
+
+            firewallRules.Add(newRule);
         }
     }
 
@@ -43,8 +65,8 @@ public static class FirewallManager
     if (!string.IsNullOrEmpty(udpPorts)) pfRules += $"pass in proto udp to any port {{{udpPorts}}}\n";
     if (!string.IsNullOrEmpty(tcpPorts)) pfRules += $"pass in proto tcp to any port {{{tcpPorts}}}\n";
 
-    File.WriteAllText("/etc/pf.anchors/openjk", pfRules);
-    RunProcess("sh", "-c \"grep -q 'anchor \\\"openjk\\\"' /etc/pf.conf || echo 'anchor \\\"openjk\\\"' >> /etc/pf.conf\"");
+    File.WriteAllText("/etc/pf.anchors/JkaProtocolProxy", pfRules);
+    RunProcess("sh", "-c \"grep -q 'anchor \\\"JkaProtocolProxy\\\"' /etc/pf.conf || echo 'anchor \\\"JkaProtocolProxy\\\"' >> /etc/pf.conf\"");
     RunProcess("pfctl", "-f /etc/pf.conf");
     RunProcessIgnoreExit("pfctl", "-e"); // exit 1 = already enabled, that's fine
 }
