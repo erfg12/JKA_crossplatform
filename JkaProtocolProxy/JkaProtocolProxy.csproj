@@ -9,6 +9,7 @@
     <SupportedOSPlatformVersion>6.0.6000</SupportedOSPlatformVersion>
     <DefaultItemExcludes>$(DefaultItemExcludes);JkaProtocolProxy.Tests/**</DefaultItemExcludes>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
