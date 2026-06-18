@@ -178,8 +178,8 @@ public class JkaProxyEngine
             lock (Console.Out)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"[Observe] Intercepted Connect Request From Client:");
-                Helper.PrintHexDump(packet);
+                Console.WriteLine($"[Observe] Intercepted Connect Request From Client");
+                //Helper.PrintHexDump(packet);
                 Console.ResetColor();
             }
 
@@ -193,7 +193,7 @@ public class JkaProxyEngine
             if (!string.IsNullOrEmpty(modified))
                 result = ConnectPacket.SetUserinfo(packet, modified);
 
-            Helper.PrintHexDump(result);
+            //Helper.PrintHexDump(result);
             return result;
         }
 
