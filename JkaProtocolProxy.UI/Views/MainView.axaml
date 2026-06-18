@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:JkaProtocolProxy.UI.ViewModels"
+             xmlns:jka="clr-namespace:JKAServerBrowser"
+             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
+             x:Class="JkaProtocolProxy.UI.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             x:CompileBindings="False">
+	<Grid RowDefinitions="Auto, *">
+
+		<TabControl Grid.Row="1">
+
+			<!-- Server Browser Tab -->
+			<TabItem Header="Server Browser">
+				<Grid RowDefinitions="Auto, *, Auto, 100">
+
+					<!-- Toolbar -->
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+						<Button Command="{Binding StartProxyCommand}"
+						IsEnabled="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}"
+						Content="Start Proxy"
+						Margin="5,0,0,0"/>
+						<Button Command="{Binding RefreshServersCommand}"
+                                IsEnabled="{Binding !IsLoading}"
+                                Content="Refresh" Margin="0,0,5,0"/>
+						<TextBlock Text="Loading..."
+                                   IsVisible="{Binding IsLoading}"
+                                   VerticalAlignment="Center"/>
+					</StackPanel>
+
+					<!-- Server List -->
+					<dg:DataGrid Grid.Row="1"
+                                 ItemsSource="{Binding Servers}"
+                                 SelectedItem="{Binding SelectedServer}"
+                                 GridLinesVisibility="All"
+                                 BorderThickness="1"
+                                 BorderBrush="Gray"
+                                 CanUserResizeColumns="True"
+                                 IsReadOnly="True">
+						<dg:DataGrid.Columns>
+							<dg:DataGridTextColumn Header="Server Name" Binding="{Binding HostName}"    Width="400"/>
+							<dg:DataGridTextColumn Header="Map"         Binding="{Binding MapName}"     Width="150"/>
+							<dg:DataGridTextColumn Header="Mode"        Binding="{Binding GameType}"    Width="80"/>
+							<dg:DataGridTextColumn Header="Players"     Binding="{Binding PlayerCount}" Width="70"/>
+							<dg:DataGridTextColumn Header="Mod"         Binding="{Binding Mod}"         Width="120"/>
+							<dg:DataGridTextColumn Header="Version"     Binding="{Binding Version}"     Width="80"/>
+							<dg:DataGridTextColumn Header="Address"     Binding="{Binding Address}"     Width="130"/>
+						</dg:DataGrid.Columns>
+					</dg:DataGrid>
+
+					<GridSplitter Grid.Row="2" Background="DarkGray" Height="4" HorizontalAlignment="Stretch"/>
+
+					<!-- Selected Server Details -->
+					<TextBox Grid.Row="3"
+                             Text="{Binding DetailsText}"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"
+                             FontFamily="Courier New"
+                             Margin="5"
+                             Watermark="Select a server to see details..."/>
+				</Grid>
+			</TabItem>
+
+			<!-- Log Tab -->
+			<TabItem Header="Log">
+				<Grid RowDefinitions="*, Auto, 350">
+					<dg:DataGrid Grid.Row="0"
+                                 ItemsSource="{Binding LogItems}"
+                                 SelectedItem="{Binding SelectedLogItem}"
+                                 GridLinesVisibility="All"
+                                 BorderThickness="1"
+                                 BorderBrush="Gray"
+                                 CanUserResizeColumns="True">
+						<dg:DataGrid.Columns>
+							<dg:DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp}" Width="150"/>
+							<dg:DataGridTextColumn Header="Level"     Binding="{Binding Level}"     Width="100"/>
+							<dg:DataGridTextColumn Header="Message"   Binding="{Binding Message}"   Width="*"/>
+						</dg:DataGrid.Columns>
+					</dg:DataGrid>
+					<GridSplitter Grid.Row="1" Background="DarkGray" Height="4" HorizontalAlignment="Stretch"/>
+					<TextBox Grid.Row="2"
+                             Text="{Binding DetailsText}"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             FontFamily="Courier New"
+                             Margin="5"
+                             Watermark="Select an item above to see details..."/>
+				</Grid>
+			</TabItem>
+
+		</TabControl>
+	</Grid>
+</UserControl>

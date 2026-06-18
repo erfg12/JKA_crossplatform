@@ -19,40 +19,33 @@ class Program
         return ((IPEndPoint)socket.LocalEndPoint!).Address.ToString();
     }
 
-    static async Task Main(string[] args)
-    {
-        FirewallManager.OpenPorts();
+    //static async Task Main(string[] args)
+    //{
+    //    FirewallManager.OpenPorts();
 
-        // Catch anything that escapes to the top level - log it but never crash
-        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
-        {
-            LogCritical("UnhandledException", e.ExceptionObject?.ToString() ?? "Unknown");
-        };
-        TaskScheduler.UnobservedTaskException += (sender, e) =>
-        {
-            LogCritical("UnobservedTaskException", e.Exception?.ToString() ?? "Unknown");
-            e.SetObserved(); // prevent process termination
-        };
+    //    // Catch anything that escapes to the top level - log it but never crash
+    //    AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+    //    {
+    //        LogCritical("UnhandledException", e.ExceptionObject?.ToString() ?? "Unknown");
+    //    };
+    //    TaskScheduler.UnobservedTaskException += (sender, e) =>
+    //    {
+    //        LogCritical("UnobservedTaskException", e.Exception?.ToString() ?? "Unknown");
+    //        e.SetObserved(); // prevent process termination
+    //    };
 
-        // Intercept Ctrl+C - warn but keep running
-        // Console.CancelKeyPress += (sender, e) =>
-        // {
-        //     e.Cancel = true; // do NOT exit
-        //     LogWarning("Ctrl+C intercepted - proxy is keeping alive. Kill via Task Manager if needed.");
-        // };
+    //    var myIp = GetLocalIP();
 
-        var myIp = GetLocalIP();
+    //    Console.WriteLine($"[INIT] Starting Multi-Protocol Redirector Engine...");
+    //    Console.WriteLine($"[INIT] UDP Redirect To: {myIp}:29070");
 
-        Console.WriteLine($"[INIT] Starting Multi-Protocol Redirector Engine...");
-        Console.WriteLine($"[INIT] UDP Redirect To: {myIp}:29070");
-
-        // Run all three services with auto-restart on failure
-        await Task.WhenAll(
-            RunForeverAsync("Game Proxy", RunGameProxyAsync),
-            RunForeverAsync("HTTP Health", () => MatchmakingRedirector.StartHealthListener(80)),
-            RunForeverAsync("UDP Matchmaking", () => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070))
-        );
-    }
+    //    // Run all three services with auto-restart on failure
+    //    await Task.WhenAll(
+    //        RunForeverAsync("Game Proxy", RunGameProxyAsync),
+    //        RunForeverAsync("HTTP Health", () => MatchmakingRedirector.StartHealthListener(80)),
+    //        RunForeverAsync("UDP Matchmaking", () => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070))
+    //    );
+    //}
 
     /// <summary>
     /// Wraps a service loop so that if it throws or returns, it restarts after a short delay.
