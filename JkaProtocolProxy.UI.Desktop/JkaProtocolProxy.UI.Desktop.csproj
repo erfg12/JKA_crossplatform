@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-  <AssemblyName>JKAProtocolProxy</AssemblyName>
+  <AssemblyName>JKACrossplatform</AssemblyName>
   <ApplicationIcon>..\\JkaProtocolProxy.UI\\Assets\\icon.ico</ApplicationIcon>
     <OutputType>WinExe</OutputType>
     <!--If you are willing to use Windows/MacOS native APIs you will need to create 3 projects.
