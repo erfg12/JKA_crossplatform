@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -19,11 +20,10 @@ namespace JKAServerBrowser
         public Dictionary<string, string> Properties { get; set; } = new();
         public string Address { get; set; }
         public int Port { get; set; }
-        public int PlayerCount { get; set; }
+        public int PlayerCount => int.TryParse(Properties.GetValueOrDefault("clients"), out var c) ? c : 0;
 
         public string HostName => StripColors(Properties.GetValueOrDefault("hostname", "Unknown"));
         public string Mod => Properties.GetValueOrDefault("game", "basejka");
-        public int Clients => int.TryParse(Properties.GetValueOrDefault("clients"), out var v) ? v : 0;
         public int MaxClients => int.TryParse(Properties.GetValueOrDefault("sv_maxclients"), out var v) ? v : 0;
         public bool Password => Properties.GetValueOrDefault("needpass") == "1";
         public string MapName => Properties.GetValueOrDefault("mapname", "Unknown");
@@ -57,7 +57,7 @@ namespace JKAServerBrowser
         }
 
         public override string ToString() =>
-            $"[{Address}:{Port}] {HostName} | {MapName} | {GameType} | {Clients}/{MaxClients} | {Version} | {Mod}";
+            $"[{Address}:{Port}] {HostName} | {MapName} | {GameType} | {PlayerCount}/{MaxClients} | {Version} | {Mod}";
     }
 
     public class JKAMasterClient : IDisposable
@@ -90,10 +90,28 @@ namespace JKAServerBrowser
 
         public async Task<List<ServerEntry>> GetServerListAsync(string masterHost, int masterPort)
         {
-            var endpoint = new IPEndPoint(
-                (await Dns.GetHostAddressesAsync(masterHost))[0],
-                masterPort
-            );
+            IPEndPoint endpoint = null;
+            try
+            {
+                endpoint = new IPEndPoint(
+                    (await Dns.GetHostAddressesAsync(masterHost))[0],
+                    masterPort
+                );
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    endpoint = new IPEndPoint(
+                        (await Dns.GetHostAddressesAsync(masterHost))[1],
+                        masterPort
+                    );
+                } catch
+                {
+                    Debug.WriteLine(ex);
+                    return new List<ServerEntry>();
+                }
+            }
 
             await _udp.SendAsync(GetServersPacket, GetServersPacket.Length, endpoint);
 

@@ -31,16 +31,12 @@ public class ProxyService
         _runTask = Task.Run(() => RunAllAsync(_cts.Token));
     }
 
-    public async Task StopAsync()
+    public void StopAsync()
     {
         if (_cts == null) return;
         _cts.Cancel();
-        if (_runTask != null)
-            await _runTask.ConfigureAwait(false);
         _cts = null;
         _runTask = null;
-
-        // Restore console output
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
         _consoleWriter = null;
     }
@@ -55,36 +51,14 @@ public class ProxyService
     private async Task RunAllAsync(CancellationToken ct)
     {
         FirewallManager.OpenPorts();
-
         var myIp = GetLocalIP();
         Log($"[INIT] Starting... UDP Redirect To: {myIp}:29070");
 
-        await Task.WhenAll(
-            RunForeverAsync("Game Proxy", () => RunGameProxyAsync(ct), ct),
-            RunForeverAsync("HTTP Health", () => MatchmakingRedirector.StartHealthListener(80), ct),
-            RunForeverAsync("UDP Matchmaking", () => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070), ct)
-        );
-    }
+        var t1 = Task.Run(() => RunGameProxyAsync(ct), ct);
+        var t2 = Task.Run(() => MatchmakingRedirector.StartHealthListener(80, ct), ct);
+        var t3 = Task.Run(() => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070, ct), ct);
 
-    private async Task RunForeverAsync(string name, Func<Task> serviceFactory, CancellationToken ct)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                Log($"[{name}] Starting...");
-                await serviceFactory();
-                Log($"[WARN] [{name}] Service exited unexpectedly - restarting in 3s...");
-            }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex)
-            {
-                Log($"[CRITICAL] [{name}] Crashed: {ex.Message} - restarting in 3s...");
-            }
-
-            try { await Task.Delay(3000, ct); }
-            catch (OperationCanceledException) { break; }
-        }
+        await Task.WhenAll(t1, t2, t3);
     }
 
     private async Task RunGameProxyAsync(CancellationToken ct)

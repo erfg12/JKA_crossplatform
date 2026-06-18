@@ -4,9 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:JkaProtocolProxy.UI.Views"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="950"
+		Width="1070"
+        Height="650"
         x:Class="JkaProtocolProxy.UI.Views.MainWindow"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="JkaProtocolProxy.UI">
+        Icon="/Assets/icon.ico"
+        Title="JKA Protocol Proxy">
         <views:MainView />
 </Window>

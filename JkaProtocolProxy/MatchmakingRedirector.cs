@@ -10,7 +10,7 @@ class MatchmakingRedirector
     /// <summary>
     /// Asynchronously listens for standard HTTP requests on Port 80 and answers with a 200 OK status.
     /// </summary>
-    public static async Task StartHealthListener(int port)
+    public static async Task StartHealthListener(int port, CancellationToken ct)
     {
         if (!HttpListener.IsSupported)
         {
@@ -26,15 +26,15 @@ class MatchmakingRedirector
             listener.Start();
             Console.WriteLine($"[HTTP - INIT] Web Server bound to TCP port {port}. Awaiting background web check-ins...\n");
 
-            while (true)
+            ct.Register(() => listener.Stop());
+
+            while (!ct.IsCancellationRequested)
             {
                 HttpListenerContext context = await listener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
                 HttpListenerResponse response = context.Response;
 
-                Console.WriteLine($"[HTTP - INBOUND] Intercepted Health Check Request!");
-                Console.WriteLine($"  -> URL Requested: {request.Url}");
-                Console.WriteLine($"  -> Remote Client: {request.RemoteEndPoint}");
+                Console.WriteLine($"[HTTP - INBOUND] Intercepted Health Check Request {request.Url} -> {request.RemoteEndPoint}");
 
                 // Basic 200 OK response payload
                 string responseString = "<html><body>200 OK</body></html>";
@@ -49,7 +49,6 @@ class MatchmakingRedirector
                 }
 
                 Console.WriteLine($"[HTTP - RESPONSE] Sent Status 200 OK back to {request.RemoteEndPoint}.\n");
-                Console.WriteLine(new string('=', 80));
             }
         }
         catch (HttpListenerException ex)
@@ -67,7 +66,7 @@ class MatchmakingRedirector
     /// <summary>
     /// Asynchronously handles the JKA UDP matchmaking redirection loop.
     /// </summary>
-    public static async Task StartUdpListenerAsync(int listenPort, string targetIp, ushort targetPort)
+    public static async Task StartUdpListenerAsync(int listenPort, string targetIp, ushort targetPort, CancellationToken ct)
     {
         try
         {
@@ -75,7 +74,9 @@ class MatchmakingRedirector
             {
                 Console.WriteLine($"[UDP - INIT] Socket bound to UDP port {listenPort}. Awaiting matchmaking traffic...\n");
 
-                while (true)
+                ct.Register(() => udpClient.Close());
+
+                while (!ct.IsCancellationRequested)
                 {
                     UdpReceiveResult receiveResult = await udpClient.ReceiveAsync();
                     byte[] incomingData = receiveResult.Buffer;

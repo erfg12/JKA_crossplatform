@@ -1,8 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Avalonia.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JKAServerBrowser;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace JkaProtocolProxy.UI.ViewModels;
@@ -27,6 +29,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private LogEntry? _selectedLogItem;
 
+    [ObservableProperty]
+    private bool _isRunning;
+
     private readonly ProxyService _proxy = new();
 
     partial void OnSelectedServerChanged(ServerInfo? value)
@@ -43,25 +48,36 @@ public partial class MainViewModel : ObservableObject
     {
         _proxy.ServerIp = SelectedServer.Address;
         _proxy.ServerPort = SelectedServer.Port;
-        _proxy.OnLog += message =>
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                LogItems.Add(new LogEntry
-                {
-                    Timestamp = DateTime.Now.ToString("HH:mm:ss"),
-                    Level = "INFO",
-                    Message = message
-                });
-            });
-        };
+
+        // Unsubscribe first to prevent duplicate handlers
+        _proxy.OnLog -= OnProxyLog;
+        _proxy.OnLog += OnProxyLog;
+
         _proxy.Start();
+        Console.WriteLine($"Sending game client to server: {SelectedServer?.HostName} - {SelectedServer?.Address}:{SelectedServer?.Port}");
+        IsRunning = true;
+    }
+
+    private void OnProxyLog(string message)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            LogItems.Add(new LogEntry
+            {
+                Timestamp = DateTime.Now.ToString("HH:mm:ss"),
+                Level = "INFO",
+                Message = message
+            });
+        });
     }
 
     [RelayCommand]
-    public async Task StopProxy()
+    public async void StopProxy()
     {
-        await _proxy.StopAsync();
+        _proxy.StopAsync();
+        _proxy.OnLog -= OnProxyLog;
+        IsRunning = false;
+        Console.WriteLine("proxy server stopped.");
     }
 
     [RelayCommand]

@@ -15,14 +15,20 @@
 
 			<!-- Server Browser Tab -->
 			<TabItem Header="Server Browser">
-				<Grid RowDefinitions="Auto, *, Auto, 100">
+				<Grid RowDefinitions="Auto, *, Auto, 10">
 
 					<!-- Toolbar -->
 					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
 						<Button Command="{Binding StartProxyCommand}"
-						IsEnabled="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}"
-						Content="Start Proxy"
-						Margin="5,0,0,0"/>
+								IsVisible="{Binding !IsRunning}"
+								IsEnabled="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}"
+								Content="Start Proxy"
+								Margin="5,0,0,0"/>
+
+						<Button Command="{Binding StopProxyCommand}"
+								IsVisible="{Binding IsRunning}"
+								Content="Stop Proxy"
+								Margin="5,0,0,0"/>
 						<Button Command="{Binding RefreshServersCommand}"
                                 IsEnabled="{Binding !IsLoading}"
                                 Content="Refresh" Margin="0,0,5,0"/>
@@ -38,30 +44,22 @@
                                  GridLinesVisibility="All"
                                  BorderThickness="1"
                                  BorderBrush="Gray"
+								 CanUserSortColumns="True"
                                  CanUserResizeColumns="True"
+								 Sorting="DataGrid_Sorting"
                                  IsReadOnly="True">
 						<dg:DataGrid.Columns>
-							<dg:DataGridTextColumn Header="Server Name" Binding="{Binding HostName}"    Width="400"/>
-							<dg:DataGridTextColumn Header="Map"         Binding="{Binding MapName}"     Width="150"/>
-							<dg:DataGridTextColumn Header="Mode"        Binding="{Binding GameType}"    Width="80"/>
-							<dg:DataGridTextColumn Header="Players"     Binding="{Binding PlayerCount}" Width="70"/>
-							<dg:DataGridTextColumn Header="Mod"         Binding="{Binding Mod}"         Width="120"/>
-							<dg:DataGridTextColumn Header="Version"     Binding="{Binding Version}"     Width="80"/>
-							<dg:DataGridTextColumn Header="Address"     Binding="{Binding Address}"     Width="130"/>
+							<dg:DataGridTextColumn Header="Server Name" Binding="{Binding HostName}"    Width="400" CanUserSort="True"/>
+							<dg:DataGridTextColumn Header="Map"         Binding="{Binding MapName}"     Width="150" CanUserSort="True"/>
+							<dg:DataGridTextColumn Header="Mode"        Binding="{Binding GameType}"    Width="80" CanUserSort="True"/>
+							<dg:DataGridTextColumn Header="Players"     Binding="{Binding PlayerCount}" Width="80" CanUserSort="True"/>
+							<dg:DataGridTextColumn Header="Mod"         Binding="{Binding Mod}"         Width="120" CanUserSort="True"/>
+							<dg:DataGridTextColumn Header="Version"     Binding="{Binding Version}"     Width="80" CanUserSort="True"/>
+							<dg:DataGridTextColumn Header="Address"     Binding="{Binding Address}"     Width="130" CanUserSort="True"/>
 						</dg:DataGrid.Columns>
 					</dg:DataGrid>
 
-					<GridSplitter Grid.Row="2" Background="DarkGray" Height="4" HorizontalAlignment="Stretch"/>
-
-					<!-- Selected Server Details -->
-					<TextBox Grid.Row="3"
-                             Text="{Binding DetailsText}"
-                             IsReadOnly="True"
-                             TextWrapping="Wrap"
-                             FontFamily="Courier New"
-                             Margin="5"
-                             Watermark="Select a server to see details..."/>
-				</Grid>
+			</Grid>
 			</TabItem>
 
 			<!-- Log Tab -->
@@ -80,16 +78,6 @@
 							<dg:DataGridTextColumn Header="Message"   Binding="{Binding Message}"   Width="*"/>
 						</dg:DataGrid.Columns>
 					</dg:DataGrid>
-					<GridSplitter Grid.Row="1" Background="DarkGray" Height="4" HorizontalAlignment="Stretch"/>
-					<TextBox Grid.Row="2"
-                             Text="{Binding DetailsText}"
-                             IsReadOnly="True"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             FontFamily="Courier New"
-                             Margin="5"
-                             Watermark="Select an item above to see details..."/>
 				</Grid>
 			</TabItem>
 
