@@ -103,7 +103,7 @@ namespace JKAServerBrowser
             {
                 while (true)
                 {
-                    var result = await _udp.ReceiveAsync().WaitAsync(TimeSpan.FromSeconds(3));
+                    var result = await _udp.ReceiveAsync().WaitAsync(TimeSpan.FromSeconds(10));
                     var data = result.Buffer;
 
                     if (!StartsWith(data, ServersResponseHeader))
@@ -149,7 +149,7 @@ namespace JKAServerBrowser
 
             try
             {
-                var result = await udp.ReceiveAsync().WaitAsync(TimeSpan.FromSeconds(3));
+                var result = await udp.ReceiveAsync().WaitAsync(TimeSpan.FromSeconds(10));
                 var data = result.Buffer;
 
                 if (!StartsWith(data, InfoResponseHeader))

@@ -43,12 +43,18 @@ public partial class MainViewModel : ObservableObject
     {
         _proxy.ServerIp = SelectedServer.Address;
         _proxy.ServerPort = SelectedServer.Port;
-        _proxy.OnLog += message => LogItems.Add(new LogEntry
+        _proxy.OnLog += message =>
         {
-            Timestamp = DateTime.Now.ToString("HH:mm:ss"),
-            Level = "INFO",
-            Message = message
-        });
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                LogItems.Add(new LogEntry
+                {
+                    Timestamp = DateTime.Now.ToString("HH:mm:ss"),
+                    Level = "INFO",
+                    Message = message
+                });
+            });
+        };
         _proxy.Start();
     }
 
