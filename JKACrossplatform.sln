@@ -3,11 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36717.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JkaProtocolProxy", "JkaProtocolProxy.csproj", "{E82A3B7E-6BCE-04D7-A3BF-5069CA1F9945}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JkaProtocolProxy", "JkaProtocolProxy\JkaProtocolProxy.csproj", "{E82A3B7E-6BCE-04D7-A3BF-5069CA1F9945}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JkaProtocolProxy.UI", "..\JkaProtocolProxy.UI\JkaProtocolProxy.UI.csproj", "{81AF757D-AE02-731A-50BC-E07D54D98123}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JkaProtocolProxy.UI", "JkaProtocolProxy.UI\JkaProtocolProxy.UI.csproj", "{81AF757D-AE02-731A-50BC-E07D54D98123}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JkaProtocolProxy.UI.Desktop", "..\JkaProtocolProxy.UI.Desktop\JkaProtocolProxy.UI.Desktop.csproj", "{2686A390-FF12-0343-D13D-0D6523683DFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JkaProtocolProxy.UI.Desktop", "JkaProtocolProxy.UI.Desktop\JkaProtocolProxy.UI.Desktop.csproj", "{2686A390-FF12-0343-D13D-0D6523683DFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Installer", "Installer\Installer.csproj", "{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uninstall", "Uninstaller\Uninstall.csproj", "{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +59,30 @@ Global
 		{2686A390-FF12-0343-D13D-0D6523683DFF}.Release|x64.Build.0 = Release|Any CPU
 		{2686A390-FF12-0343-D13D-0D6523683DFF}.Release|x86.ActiveCfg = Release|Any CPU
 		{2686A390-FF12-0343-D13D-0D6523683DFF}.Release|x86.Build.0 = Release|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Debug|x64.Build.0 = Debug|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Debug|x86.Build.0 = Debug|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Release|x64.ActiveCfg = Release|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Release|x64.Build.0 = Release|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Release|x86.ActiveCfg = Release|Any CPU
+		{E23724F6-A252-3BA6-A9A8-1E4277D6F4EE}.Release|x86.Build.0 = Release|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Debug|x64.Build.0 = Debug|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Debug|x86.Build.0 = Debug|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Release|x64.ActiveCfg = Release|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Release|x64.Build.0 = Release|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Release|x86.ActiveCfg = Release|Any CPU
+		{374D82F5-BD4B-1B9D-8763-AEF4750E05CA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
