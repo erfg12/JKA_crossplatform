@@ -160,14 +160,17 @@ jobs:
         run: |
           APP_PATH="bin/JKACrossplatform.app"
           
+          # Use the exact keychain path and common name provided dynamically by the import action
+          KEYCHAIN_PATH="${{ steps.install_certs.outputs.keychain-path }}"
+          
           echo "Signing binaries, native dylibs, and libraries inside the bundle..."
           find "$APP_PATH/Contents/MacOS" -type f \( -name "*.dylib" -o -name "*.so" -o -not -name "*.*" \) -print0 | while IFS= read -r -d '' file; do
             echo "Signing $file"
-            codesign --force --options runtime --sign "Developer ID Application" "$file"
+            codesign --force --options runtime --keychain "$KEYCHAIN_PATH" --sign "Developer ID Application" "$file"
           done
 
           echo "Signing the main app bundle..."
-          codesign --force --options runtime --sign "Developer ID Application" "$APP_PATH"
+          codesign --force --options runtime --keychain "$KEYCHAIN_PATH" --sign "Developer ID Application" "$APP_PATH"
 
       - name: Create .dmg (macOS)
         if: runner.os == 'macOS'
