@@ -8,9 +8,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class JkaProxyEngine
+public class JkaProxyEngine : IDisposable
 {
-    private readonly IPEndPoint _remoteServerEndpoint;
+    private IPEndPoint _remoteServerEndpoint;
     private readonly UdpClient _proxyListener;
 
     private IPEndPoint? _gameConsoleClientEndpoint;
@@ -19,8 +19,15 @@ public class JkaProxyEngine
 
     private static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(30);
 
-    public async Task RunProxyLoopAsync(CancellationToken cancellationToken)
+    public JkaProxyEngine()
     {
+        _proxyListener = new UdpClient(29070);
+    }
+
+
+    public async Task RunProxyLoopAsync(string PCGameServerIp, int PCGameServerPort, CancellationToken cancellationToken)
+    {
+        _remoteServerEndpoint = new IPEndPoint(IPAddress.Parse(PCGameServerIp), PCGameServerPort);
         // Background timeout watcher
         _ = Task.Run(async () =>
         {
@@ -201,6 +208,22 @@ public class JkaProxyEngine
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"[{context}]: {message}");
             Console.ResetColor();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_proxyListener != null)
+        {
+            try
+            {
+                _proxyListener.Close();
+                Console.WriteLine("[ProxyEngine] Socket listener closed and port released.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ProxyEngine] Error during socket disposal: {ex.Message}");
+            }
         }
     }
 }

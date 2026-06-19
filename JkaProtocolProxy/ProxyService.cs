@@ -10,6 +10,7 @@ public class ProxyService
 
     private CancellationTokenSource? _cts;
     private Task? _runTask;
+    private JkaProxyEngine? _currentEngine;
 
     public event Action<string>? OnLog;
 
@@ -31,9 +32,21 @@ public class ProxyService
     public void StopAsync()
     {
         if (_cts == null) return;
+
+        // 1. Signal cancellation first
         _cts.Cancel();
+        _cts.Dispose();
         _cts = null;
+
+        // 2. Explicitly dispose of the engine to force-close the port
+        if (_currentEngine != null)
+        {
+            _currentEngine.Dispose();
+            _currentEngine = null;
+        }
+
         _runTask = null;
+
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
         _consoleWriter = null;
     }
@@ -51,17 +64,29 @@ public class ProxyService
         var myIp = GetLocalIP();
         Log($"[INIT] Starting... UDP Redirect To: {myIp}:29070");
 
-        var t1 = Task.Run(() => RunGameProxyAsync(ct), ct);
+        // 1. Instantiate the engine here and save it to the class field
+        _currentEngine = new JkaProxyEngine();
+
+        // 2. Pass the engine instance into your game proxy runner
+        var t1 = Task.Run(() => RunGameProxyAsync(_currentEngine, ct), ct);
         var t2 = Task.Run(() => MatchmakingRedirector.StartHealthListener(80, ct), ct);
         var t3 = Task.Run(() => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070, ct), ct);
 
-        await Task.WhenAll(t1, t2, t3);
+        try
+        {
+            await Task.WhenAll(t1, t2, t3);
+        }
+        catch (Exception ex)
+        {
+            // When StopAsync closes the socket, Task.WhenAll will throw an exception.
+            // Catching it here prevents your background worker from crashing silently.
+            Log($"[INIT] Pipelines stopped: {ex.Message}");
+        }
     }
 
-    private async Task RunGameProxyAsync(CancellationToken ct)
+    private async Task RunGameProxyAsync(JkaProxyEngine proxyEngine, CancellationToken ct)
     {
-        var proxyEngine = new JkaProxyEngine();
-        await proxyEngine.RunProxyLoopAsync(ct);
+        await proxyEngine.RunProxyLoopAsync(ServerIp, ServerPort, ct);
     }
 
     private void Log(string message) => OnLog?.Invoke(message);
