@@ -90,8 +90,9 @@ jobs:
             tag=manual-$(date +%Y%m%d%H%M%S)
           fi
 
-          cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
-          tar -czf ../../../../JKA_Proxy-${tag}-${{ matrix.rid }}.tar.gz *
+          # FIX: cd directly into the project's specific build output folder
+          cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy/JkaProtocolProxy.UI.Desktop
+          tar -czf ../../../../../JKA_Proxy-${tag}-${{ matrix.rid }}.tar.gz *
 
       - name: Create .app bundle (macOS)
         if: runner.os == 'macOS'
@@ -100,10 +101,12 @@ jobs:
           mkdir -p $APP/Contents/MacOS
           mkdir -p $APP/Contents/Resources
 
-          # Copy EVERYTHING from the publish directory into the bundle
-          cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
+          # FIX: Notice the trailing wildcard to grab files inside the project subfolder
+          cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/JkaProtocolProxy.UI.Desktop/* $APP/Contents/MacOS/
           
-          # Rename the actual desktop runner to match your Info.plist executable name
+          chmod +x $APP/Contents/MacOS/JkaProtocolProxy.UI.Desktop
+          
+          # Fix the executable path to match your Info.plist expectations
           mv $APP/Contents/MacOS/JkaProtocolProxy.UI.Desktop $APP/Contents/MacOS/JKA_Proxy
           chmod +x $APP/Contents/MacOS/JKA_Proxy
 
