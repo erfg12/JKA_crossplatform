@@ -1,6 +1,6 @@
 {
   "solution": {
-    "path": "JKAcrossplatform.sln",
+    "path": "JKACrossplatform.sln",
     "projects": [
       "JkaProtocolProxy.UI.Desktop/JkaProtocolProxy.UI.Desktop.csproj",
       "JkaProtocolProxy.UI/JkaProtocolProxy.UI.csproj",
