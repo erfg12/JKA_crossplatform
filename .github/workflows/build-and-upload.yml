@@ -40,7 +40,7 @@ jobs:
         if: runner.os != 'Windows'
         run: dotnet restore JKA_crossplatform.mac.slnf
 
-# ---------------- PUBLISH ----------------
+      # ---------------- PUBLISH ----------------
       - name: Build main app (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -84,21 +84,18 @@ jobs:
         shell: pwsh
         run: |
           $cleanRef = $env:GITHUB_REF -replace '^refs/(tags|heads)/', ''
-
           if ($env:GITHUB_REF -notlike 'refs/tags/*') {
               $tag = "manual-$(Get-Date -Format yyyyMMddHHmmss)"
           } else {
               $tag = $cleanRef
           }
-
           $installer = Get-ChildItem bin\PublishOutputs\win-x64\Installer\*.exe | Select-Object -First 1
-
           if ($null -eq $installer) {
               Write-Error "Could not find any .exe installer in the publish outputs directory!"
               exit 1
           }
-
           Compress-Archive -Path $installer.FullName -DestinationPath "JKACrossplatform-$tag-win-x64.zip"
+
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -106,7 +103,6 @@ jobs:
           if [ -z "$tag" ]; then
             tag=manual-$(date +%Y%m%d%H%M%S)
           fi
-          
           cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
           tar -czf "$GITHUB_WORKSPACE/JKACrossplatform-${tag}-${{ matrix.rid }}.tar.gz" *
 
@@ -126,7 +122,7 @@ jobs:
             echo "Warning: icon.icns was not found in the root directory!"
           fi
 
-          cat > $APP/Contents/Info.plist << EOF
+          cat > $APP/Contents/Info.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -141,6 +137,8 @@ jobs:
             <string>com.newagesoftware.jkacrossplatform</string>
             <key>CFBundleVersion</key>
             <string>1.0.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -149,20 +147,58 @@ jobs:
           </plist>
           EOF
 
+      # ---------------- MACOS CODESIGN & NOTARIZATION ----------------
+      - name: Install Apple Certificate (macOS)
+        if: runner.os == 'macOS'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+
+      - name: Code Sign App Bundle (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          APP_PATH="bin/JKACrossplatform.app"
+          
+          echo "Signing binaries, native dylibs, and libraries inside the bundle..."
+          find "$APP_PATH/Contents/MacOS" -type f \( -name "*.dylib" -o -name "*.so" -o -not -name "*.*" \) -print0 | while IFS= read -r -d '' file; do
+            echo "Signing $file"
+            codesign --force --options runtime --sign "Developer ID Application" "$file"
+          done
+
+          echo "Signing the main app bundle..."
+          codesign --force --options runtime --sign "Developer ID Application" "$APP_PATH"
+
       - name: Create .dmg (macOS)
         if: runner.os == 'macOS'
         run: |
           tag=${GITHUB_REF##*/}
           if [ -z "$tag" ]; then tag=manual-$(date +%Y%m%d%H%M%S); fi
 
-          # FIX: Point -srcfolder directly to the updated bin/JKACrossplatform.app folder
           hdiutil create \
             -volname "JKACrossplatform" \
             -srcfolder bin/JKACrossplatform.app \
             -ov -format UDZO \
             JKACrossplatform-${tag}-osx-arm64.dmg
 
-      # Upload runs last so macOS finds its .dmg file
+      - name: Notarize DMG (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          tag=${GITHUB_REF##*/}
+          if [ -z "$tag" ]; then tag=manual-$(date +%Y%m%d%H%M%S); fi
+          DMG_NAME="JKACrossplatform-${tag}-osx-arm64.dmg"
+
+          echo "Submitting $DMG_NAME to Apple Notarization Service..."
+          xcrun notarytool submit "$DMG_NAME" \
+            --apple-id "${{ secrets.APPLE_ID }}" \
+            --password "${{ secrets.APPLE_PASSWORD }}" \
+            --team-id "8LN7VSCE7M" \
+            --wait
+
+          echo "Stapling notarization ticket to DMG..."
+          xcrun stapler staple "$DMG_NAME"
+
+      # ---------------- UPLOAD ----------------
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -185,7 +221,6 @@ jobs:
         id: get_tag
         shell: bash
         run: |
-          # If it's a real tag, use it. If manual, generate a fallback tag name.
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
           else
@@ -195,7 +230,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # Explicitly pass the tag name so GitHub knows where to attach the files
           tag_name: ${{ steps.get_tag.outputs.tag }}
           name: Release ${{ steps.get_tag.outputs.tag }}
           draft: false
