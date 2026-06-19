@@ -179,11 +179,11 @@ jobs:
           echo "Signing binaries, native dylibs, DLLs, and libraries inside the bundle..."
           find "$APP_PATH/Contents/MacOS" -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.dll" -o -not -name "*.*" \) -print0 | while IFS= read -r -d '' file; do
             echo "Signing $file"
-            codesign --force --options runtime --sign "8LN7VSCE7M" "$file"
+            codesign --force --options runtime --sign "9ELVK5QPKF" "$file"
           done
 
           echo "Performing a deep verification and signature on the main app bundle..."
-          codesign --force --deep --options runtime --sign "8LN7VSCE7M" "$APP_PATH"
+          codesign --force --deep --options runtime --sign "9ELVK5QPKF" "$APP_PATH"
 
       - name: Create .dmg (macOS)
         if: runner.os == 'macOS'
@@ -208,7 +208,7 @@ jobs:
           xcrun notarytool submit "$DMG_NAME" \
             --apple-id "${{ secrets.APPLE_ID }}" \
             --password "${{ secrets.APPLE_PASSWORD }}" \
-            --team-id "8LN7VSCE7M" \
+            --team-id "9ELVK5QPKF" \
             --wait
 
           echo "Stapling notarization ticket to DMG..."
