@@ -40,7 +40,7 @@ jobs:
         if: runner.os != 'Windows'
         run: dotnet restore JKA_crossplatform.mac.slnf
 
-      # ---------------- PUBLISH ----------------
+# ---------------- PUBLISH ----------------
       - name: Build main app (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -57,22 +57,18 @@ jobs:
             -p:PublishSingleFile=true `
             -o bin\PublishOutputs\win-x64\Installer
 
-      # CHANGED: macOS now publishes using the solution filter
       - name: Publish (macOS)
         if: runner.os == 'macOS'
         run: |
           dotnet publish JKA_crossplatform.mac.slnf \
             -c Release -r osx-arm64 --self-contained true \
-            -p:PublishSingleFile=true \
             -o bin/PublishOutputs/osx-arm64/JkaProtocolProxy
 
-      # CHANGED: Linux now publishes using the solution filter
       - name: Publish (Linux)
         if: runner.os == 'Linux'
         run: |
           dotnet publish JKA_crossplatform.mac.slnf \
             -c Release -r ${{ matrix.rid }} --self-contained true \
-            -p:PublishSingleFile=true \
             -o bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
 
       # ---------------- PACKAGE ----------------
@@ -104,8 +100,11 @@ jobs:
           mkdir -p $APP/Contents/MacOS
           mkdir -p $APP/Contents/Resources
 
-          cp bin/PublishOutputs/osx-arm64/JkaProtocolProxy/JkaProtocolProxy.UI.Desktop \
-            $APP/Contents/MacOS/JKA_Proxy
+          # Copy EVERYTHING from the publish directory into the bundle
+          cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
+          
+          # Rename the actual desktop runner to match your Info.plist executable name
+          mv $APP/Contents/MacOS/JkaProtocolProxy.UI.Desktop $APP/Contents/MacOS/JKA_Proxy
           chmod +x $APP/Contents/MacOS/JKA_Proxy
 
           cat > $APP/Contents/Info.plist << EOF
