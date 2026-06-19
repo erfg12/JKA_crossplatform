@@ -70,21 +70,20 @@
 
 			<!-- Log Tab -->
 			<TabItem Header="Log">
-				<Grid RowDefinitions="*, Auto, 350">
-					<dg:DataGrid Grid.Row="0"
-                                 ItemsSource="{Binding LogItems}"
-                                 SelectedItem="{Binding SelectedLogItem}"
-                                 GridLinesVisibility="All"
-                                 BorderThickness="1"
-                                 BorderBrush="Gray"
-                                 CanUserResizeColumns="True">
-						<dg:DataGrid.Columns>
-							<dg:DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp}" Width="150"/>
-							<dg:DataGridTextColumn Header="Level"     Binding="{Binding Level}"     Width="100"/>
-							<dg:DataGridTextColumn Header="Message"   Binding="{Binding Message}"   Width="*"/>
-						</dg:DataGrid.Columns>
-					</dg:DataGrid>
-				</Grid>
+				<Border Padding="0,0,0,10">
+				<dg:DataGrid ItemsSource="{Binding LogItems}"
+							 SelectedItem="{Binding SelectedLogItem}"
+							 GridLinesVisibility="All"
+							 BorderThickness="1"
+							 BorderBrush="Gray"
+							 CanUserResizeColumns="True">
+					<dg:DataGrid.Columns>
+						<dg:DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp}" Width="150"/>
+						<dg:DataGridTextColumn Header="Level"     Binding="{Binding Level}"     Width="100"/>
+						<dg:DataGridTextColumn Header="Message"   Binding="{Binding Message}"   Width="*"/>
+					</dg:DataGrid.Columns>
+				</dg:DataGrid>
+					</Border>
 			</TabItem>
 
 		</TabControl>
