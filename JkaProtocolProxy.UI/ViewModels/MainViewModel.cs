@@ -43,6 +43,15 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    public string GridTooltip => !IsRunning
+    ? "Double-click a server to connect"
+    : "Stop proxy to browse servers";
+
+    partial void OnIsRunningChanged(bool value)
+    {
+        OnPropertyChanged(nameof(GridTooltip));
+    }
+
     [RelayCommand]
     public void StartProxy()
     {

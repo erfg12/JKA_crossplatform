@@ -11,6 +11,14 @@
     <ApplicationManifest>app1.manifest</ApplicationManifest>
     <PlatformTarget>x86</PlatformTarget>
     <PackageIcon>icon.png</PackageIcon>
+
+	  <SelfContained>false</SelfContained>
+	  <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
+
+	  <Version>1.0.0</Version>
+	  <Company>New Age Software LLC</Company>
+	  <Product>JKACrossplatform</Product>
+	  <Authors>Jacob Fliss</Authors>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\icon.png">

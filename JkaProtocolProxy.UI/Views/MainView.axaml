@@ -38,6 +38,7 @@
 					</StackPanel>
 
 					<!-- Server List -->
+					<Grid Grid.Row="1" ToolTip.Tip="{Binding GridTooltip}">
 					<dg:DataGrid Grid.Row="1"
                                  ItemsSource="{Binding Servers}"
                                  SelectedItem="{Binding SelectedServer}"
@@ -47,6 +48,7 @@
 								 CanUserSortColumns="True"
                                  CanUserResizeColumns="True"
 								 Sorting="DataGrid_Sorting"
+								 IsEnabled="{Binding !IsRunning}"
                                  IsReadOnly="True">
 						<dg:DataGrid.Columns>
 							<dg:DataGridTextColumn Header="Server Name" Binding="{Binding HostName}"    Width="400" CanUserSort="True"/>
@@ -58,6 +60,10 @@
 							<dg:DataGridTextColumn Header="Address"     Binding="{Binding Address}"     Width="130" CanUserSort="True"/>
 						</dg:DataGrid.Columns>
 					</dg:DataGrid>
+						<Border IsVisible="{Binding IsRunning}"
+            Background="#80000000"
+            IsHitTestVisible="False"/>
+						</Grid>
 
 			</Grid>
 			</TabItem>

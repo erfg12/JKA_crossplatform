@@ -9,6 +9,6 @@
         Height="650"
         x:Class="JkaProtocolProxy.UI.Views.MainWindow"
         Icon="/Assets/icon.ico"
-        Title="JKA Protocol Proxy">
+        Title="JKA Crossplatform">
         <views:MainView />
 </Window>
