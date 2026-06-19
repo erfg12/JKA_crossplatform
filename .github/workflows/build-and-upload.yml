@@ -147,9 +147,10 @@ jobs:
           </plist>
           EOF
 
-      # ---------------- MACOS CODESIGN & NOTARIZATION ----------------
+        # ---------------- MACOS CODESIGN & NOTARIZATION ----------------
       - name: Install Apple Certificate (macOS)
         if: runner.os == 'macOS'
+        id: install_certs
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
@@ -160,18 +161,18 @@ jobs:
         run: |
           APP_PATH="bin/JKACrossplatform.app"
           
-          # Use the exact keychain path and common name provided dynamically by the import action
-          KEYCHAIN_PATH="${{ steps.install_certs.outputs.keychain-path }}"
+          # Set the temporary keychain as default so codesign finds it automatically
+          security default-keychain -s "${{ steps.install_certs.outputs.keychain-name }}"
           
           echo "Signing binaries, native dylibs, and libraries inside the bundle..."
           find "$APP_PATH/Contents/MacOS" -type f \( -name "*.dylib" -o -name "*.so" -o -not -name "*.*" \) -print0 | while IFS= read -r -d '' file; do
             echo "Signing $file"
-            codesign --force --options runtime --keychain "$KEYCHAIN_PATH" --sign "Developer ID Application" "$file"
+            codesign --force --options runtime --sign "8LN7VSCE7M" "$file"
           done
 
           echo "Signing the main app bundle..."
-          codesign --force --options runtime --keychain "$KEYCHAIN_PATH" --sign "Developer ID Application" "$APP_PATH"
-
+          codesign --force --options runtime --sign "8LN7VSCE7M" "$APP_PATH"
+          
       - name: Create .dmg (macOS)
         if: runner.os == 'macOS'
         run: |
