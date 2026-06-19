@@ -116,8 +116,12 @@ jobs:
           cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
           chmod +x $APP/Contents/MacOS/JKACrossplatform
 
-          # FIX: Remove debugging symbols (.pdb) so Apple's codesign doesn't choke on them
+          # CLEANUP: Remove loose non-executable metadata files that cause codesign validation errors
           rm -f $APP/Contents/MacOS/*.pdb
+          rm -f $APP/Contents/MacOS/*.deps.json
+          rm -f $APP/Contents/MacOS/*.runtimeconfig.json
+          rm -f $APP/Contents/MacOS/*.xml
+          rm -f $APP/Contents/MacOS/*.config
 
           if [ -f "icon.icns" ]; then
             cp icon.icns $APP/Contents/Resources/icon.icns
