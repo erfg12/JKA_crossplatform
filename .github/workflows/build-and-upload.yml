@@ -48,7 +48,7 @@ jobs:
       - name: Build main app (Windows)
         if: runner.os == 'Windows'
         run: |
-          dotnet publish JkaProtocolProxy.ui.desktop\JkaProtocolProxy.ui.desktop.csproj `
+          dotnet publish JkaProtocolProxy.UI.Desktop\JkaProtocolProxy.UI.Desktop.csproj `
             -c Release -r win-x64 --self-contained true `
             -p:PublishSingleFile=true `
             -o bin\PublishOutputs\win-x64\JkaProtocolProxy
@@ -64,7 +64,7 @@ jobs:
       - name: Publish (macOS)
         if: runner.os == 'macOS'
         run: |
-          dotnet publish JkaProtocolProxy.ui.desktop/JkaProtocolProxy.ui.desktop.csproj \
+          dotnet publish JkaProtocolProxy.UI.Desktop/JkaProtocolProxy.UI.Desktop.csproj \
             -c Release -r osx-arm64 --self-contained true \
             -p:PublishSingleFile=true \
             -o bin/PublishOutputs/osx-arm64/JkaProtocolProxy
@@ -72,7 +72,7 @@ jobs:
       - name: Publish (Linux)
         if: runner.os == 'Linux'
         run: |
-          dotnet publish JkaProtocolProxy.ui.desktop/JkaProtocolProxy.ui.desktop.csproj \
+          dotnet publish JkaProtocolProxy.UI.Desktop/JkaProtocolProxy.UI.Desktop.csproj \
             -c Release -r ${{ matrix.rid }} --self-contained true \
             -p:PublishSingleFile=true \
             -o bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
@@ -112,7 +112,7 @@ jobs:
           mkdir -p $APP/Contents/MacOS
           mkdir -p $APP/Contents/Resources
 
-          cp bin/PublishOutputs/osx-arm64/JkaProtocolProxy/JkaProtocolProxy.ui.desktop \
+          cp bin/PublishOutputs/osx-arm64/JkaProtocolProxy/JkaProtocolProxy.UI.Desktop \
             $APP/Contents/MacOS/JKA_Proxy
           chmod +x $APP/Contents/MacOS/JKA_Proxy
 
