@@ -52,7 +52,7 @@ jobs:
       - name: Build uninstaller (Windows)
         if: runner.os == 'Windows'
         run: |
-          dotnet build Uninstaller\Uninstaller.csproj `
+          dotnet build Uninstaller\Uninstall.csproj `
             -c Release -r win-x64 `
             -o bin\PublishOutputs\win-x64\Uninstaller
 
