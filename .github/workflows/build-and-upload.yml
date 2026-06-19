@@ -116,12 +116,17 @@ jobs:
           cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
           chmod +x $APP/Contents/MacOS/JKACrossplatform
 
-          # CLEANUP: Remove loose non-executable metadata files that cause codesign validation errors
+          # CLEANUP: Purge loose metadata formats
           rm -f $APP/Contents/MacOS/*.pdb
           rm -f $APP/Contents/MacOS/*.deps.json
           rm -f $APP/Contents/MacOS/*.runtimeconfig.json
           rm -f $APP/Contents/MacOS/*.xml
           rm -f $APP/Contents/MacOS/*.config
+
+          # CLEANUP: Remove non-macOS cross-platform library cruft that fails code validation
+          rm -f $APP/Contents/MacOS/Avalonia.FreeDesktop*
+          rm -f $APP/Contents/MacOS/Avalonia.X11*
+          rm -f $APP/Contents/MacOS/Avalonia.Win32*
 
           if [ -f "icon.icns" ]; then
             cp icon.icns $APP/Contents/Resources/icon.icns
