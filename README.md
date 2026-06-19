@@ -2,6 +2,13 @@
 
 This lets your game console version of JKA (Switch/Switch 2, PS4/PS5) connect to a PC game server.
 
+<img width="1072" height="682" alt="image" src="https://github.com/user-attachments/assets/b71cac8b-a6a8-4c4e-8fbe-3c1d8e7a3223" />
+
+<img width="1072" height="682" alt="image" src="https://github.com/user-attachments/assets/53adfa1a-3d58-4300-a8e1-3fffee74dc34" />
+
+<img width="1000" height="900" alt="20260618_210753" src="https://github.com/user-attachments/assets/4962ebc3-17e7-4503-9ab5-fa08c058ff09" />
+
+
 ### Requirements
 
 - PC that has Administrative access
