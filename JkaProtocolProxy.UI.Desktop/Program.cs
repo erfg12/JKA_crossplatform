@@ -31,7 +31,7 @@ class Program
                         {
                             FileName = "osascript",
                             // Tells macOS to re-run this exact file context with administrator privileges
-                            Arguments = $"-e \"do shell script \"\"'{currentPath}'\"\" with administrator privileges\"",
+                            Arguments = $"-e \"do shell script \"\"export PATH=/usr/bin:/bin:/usr/sbin:/sbin && cd '{workingDir}' && '{currentPath}'\"\" with administrator privileges\"",
                             UseShellExecute = false,
                             CreateNoWindow = true
                         };
@@ -45,12 +45,10 @@ class Program
                     Console.WriteLine($"Elevation initiation failed: {ex.Message}");
                 }
 
-                // 4. Kill the unprivileged parent instance instantly so it doesn't open a blank window
                 return;
             }
         }
 
-        // 5. If we are on Windows/Linux, or already running as ROOT on Mac, boot Avalonia normally!
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
