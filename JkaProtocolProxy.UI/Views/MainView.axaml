@@ -21,10 +21,16 @@
 					<Grid Grid.Row="0" Margin="5" ColumnDefinitions="*, Auto">
 						<StackPanel Grid.Column="0" Orientation="Horizontal">
 							<Button Command="{Binding StartProxyCommand}"
-									IsVisible="{Binding !IsRunning}"
-									IsEnabled="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}"
-									Content="Start Proxy"
-									Margin="5,0,0,0"/>
+								IsVisible="{Binding !IsRunning}"
+								Content="Start Proxy"
+								Margin="5,0,0,0">
+								<Button.IsEnabled>
+									<MultiBinding Converter="{x:Static BoolConverters.And}">
+										<Binding Path="ServerIpText" Converter="{x:Static StringConverters.IsNotNullOrEmpty}"/>
+										<Binding Path="IsPortValid"/>
+									</MultiBinding>
+								</Button.IsEnabled>
+							</Button>
 							<Button Command="{Binding StopProxyCommand}"
 									IsVisible="{Binding IsRunning}"
 									Content="Stop Proxy"

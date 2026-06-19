@@ -40,6 +40,10 @@ public partial class MainViewModel : ObservableObject
 
     private readonly ProxyService _proxy = new();
 
+    public bool IsPortValid => int.TryParse(ServerPortText, out var p) && p >= 1 && p <= 65535;
+
+    partial void OnServerPortTextChanged(string value) => OnPropertyChanged(nameof(IsPortValid));
+
     partial void OnSelectedServerChanged(ServerInfo? value)
     {
         // Called automatically by CommunityToolkit whenever selection changes
@@ -63,6 +67,18 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     public void StartProxy()
     {
+        if (string.IsNullOrWhiteSpace(ServerIpText))
+        {
+            Console.WriteLine("Cannot start proxy: IP is empty.");
+            return;
+        }
+
+        if (!int.TryParse(ServerPortText, out var port) || port < 1 || port > 65535)
+        {
+            Console.WriteLine($"Cannot start proxy: '{ServerPortText}' is not a valid port (1–65535).");
+            return;
+        }
+
         _proxy.ServerIp = ServerIpText;
         _proxy.ServerPort = int.TryParse(ServerPortText, out var p) ? p : 0;
 
