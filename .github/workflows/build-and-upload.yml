@@ -107,15 +107,32 @@ jobs:
       - name: Create .app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
-          APP=bin/JKACrossplatform.app
+          APP=bin/JKA_Proxy.app
           mkdir -p $APP/Contents/MacOS
           mkdir -p $APP/Contents/Resources
 
-          # FIX: Notice the trailing wildcard to grab files inside the project subfolder
+          # 1. Copy over the application build outputs
           cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
-          
           chmod +x $APP/Contents/MacOS/JKACrossplatform
 
+          # 2. CONVERT ICON: Dynamically build an Apple .icns file from your root icon.ico
+          # Create a temporary directory structure macOS iconutil expects
+          mkdir -p bin/icon.iconset
+          
+          # Use macOS native 'sips' tool to extract standard dimensions out of the .ico
+          sips -z 16 16   icon.ico --out bin/icon.iconset/icon_16x16.png
+          sips -z 32 32   icon.ico --out bin/icon.iconset/icon_16x16@2x.png
+          sips -z 32 32   icon.ico --out bin/icon.iconset/icon_32x32.png
+          sips -z 64 64   icon.ico --out bin/icon.iconset/icon_32x32@2x.png
+          sips -z 128 128 icon.ico --out bin/icon.iconset/icon_128x128.png
+          sips -z 256 256 icon.ico --out bin/icon.iconset/icon_128x128@2x.png
+          sips -z 256 256 icon.ico --out bin/icon.iconset/icon_256x256.png
+          sips -z 512 512 icon.ico --out bin/icon.iconset/icon_256x256@2x.png
+          
+          # Compile the images into a single Apple .icns bundle inside Contents/Resources
+          iconutil -c icns bin/icon.iconset -o $APP/Contents/Resources/icon.icns
+
+          # 3. Create the Info.plist linking the newly built icon.icns
           cat > $APP/Contents/Info.plist << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -125,6 +142,9 @@ jobs:
             <string>JKA Proxy</string>
             <key>CFBundleExecutable</key>
             <string>JKACrossplatform</string>
+            # FIX: Explicitly tell macOS to use the compiled icon file
+            <key>CFBundleIconFile</key>
+            <string>icon.icns</string>
             <key>CFBundleIdentifier</key>
             <string>com.newagesoftware.jkaproxy</string>
             <key>CFBundleVersion</key>
