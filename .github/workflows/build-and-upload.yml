@@ -1,0 +1,166 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            ext: tar.gz
+          - os: macos-latest
+            rid: osx-arm64
+            ext: dmg
+          - os: windows-latest
+            rid: win-x64
+            ext: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # ---------------- RESTORE ----------------
+      - name: Restore (Windows)
+        if: runner.os == 'Windows'
+        run: dotnet restore JKACrossplatform.sln
+
+      - name: Restore (Linux)
+        if: runner.os == 'Linux'
+        run: dotnet restore JKA_Crossplatform.mac.slnf
+
+      - name: Restore (macOS)
+        if: runner.os == 'macOS'
+        run: dotnet restore JKA_Crossplatform.mac.slnf
+
+      # ---------------- PUBLISH ----------------
+      - name: Build main app (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dotnet publish JkaProtocolProxy.ui.desktop\JkaProtocolProxy.ui.desktop.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true `
+            -o bin\PublishOutputs\win-x64\JkaProtocolProxy
+
+      - name: Build installer (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dotnet publish Installer\Installer.csproj `
+            -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true `
+            -o bin\PublishOutputs\win-x64\Installer
+
+      - name: Publish (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          dotnet publish JkaProtocolProxy.ui.desktop/JkaProtocolProxy.ui.desktop.csproj \
+            -c Release -r osx-arm64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -o bin/PublishOutputs/osx-arm64/JkaProtocolProxy
+
+      - name: Publish (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          dotnet publish JkaProtocolProxy.ui.desktop/JkaProtocolProxy.ui.desktop.csproj \
+            -c Release -r ${{ matrix.rid }} --self-contained true \
+            -p:PublishSingleFile=true \
+            -o bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
+
+      # ---------------- PACKAGE ----------------
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          if (-not $tag) { $tag = "manual-$(Get-Date -Format yyyyMMddHHmmss)" }
+
+          $installer = Get-ChildItem bin\PublishOutputs\win-x64\Installer\*.exe | Select-Object -First 1
+          Compress-Archive -Path $installer.FullName -DestinationPath JKA_Proxy-$tag-win-x64.zip
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          tag=${GITHUB_REF##*/}
+          if [ -z "$tag" ]; then
+            tag=manual-$(date +%Y%m%d%H%M%S)
+          fi
+
+          cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
+          tar -czf ../../../../JKA_Proxy-${tag}-${{ matrix.rid }}.tar.gz *
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JKA_Proxy-${{ matrix.rid }}
+          path: JKA_Proxy-*.${{ matrix.ext }}
+
+      - name: Create .app bundle (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          APP=bin/JKA_Proxy.app
+          mkdir -p $APP/Contents/MacOS
+          mkdir -p $APP/Contents/Resources
+
+          cp bin/PublishOutputs/osx-arm64/JkaProtocolProxy/JkaProtocolProxy.ui.desktop \
+            $APP/Contents/MacOS/JKA_Proxy
+          chmod +x $APP/Contents/MacOS/JKA_Proxy
+
+          cat > $APP/Contents/Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>JKA Proxy</string>
+            <key>CFBundleExecutable</key>
+            <string>JKA_Proxy</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.newagesoftware.jkaproxy</string>
+            <key>CFBundleVersion</key>
+            <string>1.0.0</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Create .dmg (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          tag=${GITHUB_REF##*/}
+          if [ -z "$tag" ]; then tag=manual-$(date +%Y%m%d%H%M%S); fi
+
+          hdiutil create \
+            -volname "JKA Proxy" \
+            -srcfolder bin/JKA_Proxy.app \
+            -ov -format UDZO \
+            JKA_Proxy-${tag}-osx-arm64.dmg
+
+  # ---------------- RELEASE ----------------
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./dist/**/*
