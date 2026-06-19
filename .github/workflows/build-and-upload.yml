@@ -48,6 +48,13 @@ jobs:
             -c Release -r win-x64 --self-contained true `
             -p:PublishSingleFile=true `
             -o bin\PublishOutputs\win-x64\JkaProtocolProxy
+      
+      - name: Build uninstaller (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dotnet build Uninstaller\Uninstaller.csproj `
+            -c Release -r win-x64 `
+            -o bin\PublishOutputs\win-x64\Uninstaller
 
       - name: Build installer (Windows)
         if: runner.os == 'Windows'

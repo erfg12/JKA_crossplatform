@@ -20,14 +20,14 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="..\JkaProtocolProxy.UI.Desktop\bin\$(Configuration)\net8.0\**\*.*">
+		<EmbeddedResource Include="..\JkaProtocolProxy.UI.Desktop\bin\$(Configuration)\net8.0\win-x64\**\*.*">
 			<LogicalName>%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
 			<Visible>false</Visible>
 		</EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="..\Uninstaller\bin\$(Configuration)\net8.0-windows\**\*.*">
+		<EmbeddedResource Include="..\Uninstaller\bin\$(Configuration)\net8.0-windows\win-x64\**\*.*">
 			<LogicalName>%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
 			<Visible>false</Visible>
 		</EmbeddedResource>
