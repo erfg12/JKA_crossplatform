@@ -36,12 +36,8 @@ jobs:
         if: runner.os == 'Windows'
         run: dotnet restore JKACrossplatform.sln
 
-      - name: Restore (Linux)
-        if: runner.os == 'Linux'
-        run: dotnet restore JKA_crossplatform.mac.slnf
-
-      - name: Restore (macOS)
-        if: runner.os == 'macOS'
+      - name: Restore (Linux/macOS)
+        if: runner.os != 'Windows'
         run: dotnet restore JKA_crossplatform.mac.slnf
 
       # ---------------- PUBLISH ----------------
@@ -61,18 +57,20 @@ jobs:
             -p:PublishSingleFile=true `
             -o bin\PublishOutputs\win-x64\Installer
 
+      # CHANGED: macOS now publishes using the solution filter
       - name: Publish (macOS)
         if: runner.os == 'macOS'
         run: |
-          dotnet publish JkaProtocolProxy.UI.Desktop/JkaProtocolProxy.UI.Desktop.csproj \
+          dotnet publish JKA_crossplatform.mac.slnf \
             -c Release -r osx-arm64 --self-contained true \
             -p:PublishSingleFile=true \
             -o bin/PublishOutputs/osx-arm64/JkaProtocolProxy
 
+      # CHANGED: Linux now publishes using the solution filter
       - name: Publish (Linux)
         if: runner.os == 'Linux'
         run: |
-          dotnet publish JkaProtocolProxy.UI.Desktop/JkaProtocolProxy.UI.Desktop.csproj \
+          dotnet publish JKA_crossplatform.mac.slnf \
             -c Release -r ${{ matrix.rid }} --self-contained true \
             -p:PublishSingleFile=true \
             -o bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
@@ -98,12 +96,6 @@ jobs:
 
           cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
           tar -czf ../../../../JKA_Proxy-${tag}-${{ matrix.rid }}.tar.gz *
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: JKA_Proxy-${{ matrix.rid }}
-          path: JKA_Proxy-*.${{ matrix.ext }}
 
       - name: Create .app bundle (macOS)
         if: runner.os == 'macOS'
@@ -148,6 +140,13 @@ jobs:
             -srcfolder bin/JKA_Proxy.app \
             -ov -format UDZO \
             JKA_Proxy-${tag}-osx-arm64.dmg
+
+      # Upload runs last so macOS finds its .dmg file
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JKA_Proxy-${{ matrix.rid }}
+          path: JKA_Proxy-*.${{ matrix.ext }}
 
   # ---------------- RELEASE ----------------
   release:
