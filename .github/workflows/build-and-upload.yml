@@ -164,15 +164,16 @@ jobs:
           # Set the temporary keychain as default so codesign finds it automatically
           security default-keychain -s "${{ steps.install_certs.outputs.keychain-name }}"
           
-          echo "Signing binaries, native dylibs, and libraries inside the bundle..."
-          find "$APP_PATH/Contents/MacOS" -type f \( -name "*.dylib" -o -name "*.so" -o -not -name "*.*" \) -print0 | while IFS= read -r -d '' file; do
+          echo "Signing binaries, native dylibs, DLLs, and libraries inside the bundle..."
+          # CHANGED: Added -name "*.dll" to the find command
+          find "$APP_PATH/Contents/MacOS" -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.dll" -o -not -name "*.*" \) -print0 | while IFS= read -r -d '' file; do
             echo "Signing $file"
             codesign --force --options runtime --sign "8LN7VSCE7M" "$file"
           done
 
           echo "Signing the main app bundle..."
           codesign --force --options runtime --sign "8LN7VSCE7M" "$APP_PATH"
-          
+
       - name: Create .dmg (macOS)
         if: runner.os == 'macOS'
         run: |
