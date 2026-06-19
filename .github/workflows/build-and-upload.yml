@@ -53,7 +53,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           dotnet publish Installer\Installer.csproj `
-            -c Release -r win-x64 --self-contained false `
+            -c Release -r win-x64 --self-contained true `
             -p:PublishSingleFile=true `
             -o bin\PublishOutputs\win-x64\Installer
 
