@@ -91,7 +91,7 @@ jobs:
           fi
 
           # FIX: cd directly into the project's specific build output folder
-          cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy/JkaProtocolProxy.UI.Desktop
+          cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
           tar -czf ../../../../../JKA_Proxy-${tag}-${{ matrix.rid }}.tar.gz *
 
       - name: Create .app bundle (macOS)
@@ -102,7 +102,7 @@ jobs:
           mkdir -p $APP/Contents/Resources
 
           # FIX: Notice the trailing wildcard to grab files inside the project subfolder
-          cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/JkaProtocolProxy.UI.Desktop/* $APP/Contents/MacOS/
+          cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
           
           chmod +x $APP/Contents/MacOS/JkaProtocolProxy.UI.Desktop
           
