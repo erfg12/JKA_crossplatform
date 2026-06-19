@@ -108,7 +108,7 @@ jobs:
           fi
           
           cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
-          tar -czf ../../../../../JKACrossplatform-${tag}-${{ matrix.rid }}.tar.gz *
+          tar -czf "$GITHUB_WORKSPACE/JKACrossplatform-${tag}-${{ matrix.rid }}.tar.gz" *
 
       - name: Create .app bundle (macOS)
         if: runner.os == 'macOS'
