@@ -76,12 +76,22 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
-          if (-not $tag) { $tag = "manual-$(Get-Date -Format yyyyMMddHHmmss)" }
+          $cleanRef = $env:GITHUB_REF -replace '^refs/(tags|heads)/', ''
+
+          if ($env:GITHUB_REF -notlike 'refs/tags/*') {
+              $tag = "manual-$(Get-Date -Format yyyyMMddHHmmss)"
+          } else {
+              $tag = $cleanRef
+          }
 
           $installer = Get-ChildItem bin\PublishOutputs\win-x64\Installer\*.exe | Select-Object -First 1
-          Compress-Archive -Path $installer.FullName -DestinationPath JKA_Proxy-$tag-win-x64.zip
 
+          if ($null -eq $installer) {
+              Write-Error "Could not find any .exe installer in the publish outputs directory!"
+              exit 1
+          }
+
+          Compress-Archive -Path $installer.FullName -DestinationPath "JKA_Proxy-$tag-win-x64.zip"
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
