@@ -99,15 +99,14 @@ jobs:
           if [ -z "$tag" ]; then
             tag=manual-$(date +%Y%m%d%H%M%S)
           fi
-
-          # FIX: cd directly into the project's specific build output folder
+          
           cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
           tar -czf ../../../../../JKACrossplatform-${tag}-${{ matrix.rid }}.tar.gz *
 
       - name: Create .app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
-          APP=bin/JKA_Proxy.app
+          APP=bin/JKACrossplatform.app
           mkdir -p $APP/Contents/MacOS
           mkdir -p $APP/Contents/Resources
 
@@ -126,13 +125,13 @@ jobs:
           <plist version="1.0">
           <dict>
             <key>CFBundleName</key>
-            <string>JKA Proxy</string>
+            <string>JKACrossplatform</string>
             <key>CFBundleExecutable</key>
             <string>JKACrossplatform</string>
             <key>CFBundleIconFile</key>
             <string>icon.icns</string>
             <key>CFBundleIdentifier</key>
-            <string>com.newagesoftware.jkaproxy</string>
+            <string>com.newagesoftware.jkacrossplatform</string>
             <key>CFBundleVersion</key>
             <string>1.0.0</string>
             <key>CFBundlePackageType</key>
@@ -149,8 +148,9 @@ jobs:
           tag=${GITHUB_REF##*/}
           if [ -z "$tag" ]; then tag=manual-$(date +%Y%m%d%H%M%S); fi
 
+          # FIX: Point -srcfolder directly to the updated bin/JKACrossplatform.app folder
           hdiutil create \
-            -volname "JKA Proxy" \
+            -volname "JKACrossplatform" \
             -srcfolder bin/JKACrossplatform.app \
             -ov -format UDZO \
             JKACrossplatform-${tag}-osx-arm64.dmg
