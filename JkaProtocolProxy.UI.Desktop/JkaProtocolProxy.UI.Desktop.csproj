@@ -1,25 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-  <AssemblyName>JKACrossplatform</AssemblyName>
-  <ApplicationIcon>..\\JkaProtocolProxy.UI\\Assets\\icon.ico</ApplicationIcon>
-    <OutputType>WinExe</OutputType>
-    <!--If you are willing to use Windows/MacOS native APIs you will need to create 3 projects.
-    One for Windows with net8.0-windows TFM, one for MacOS with net8.0-macos and one with net8.0 TFM for Linux.-->
+    <AssemblyName>JKACrossplatform</AssemblyName>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <ApplicationManifest>app1.manifest</ApplicationManifest>
-    <PlatformTarget>x86</PlatformTarget>
+    <Version>1.0.0</Version>
+    <Company>New Age Software LLC</Company>
+    <Product>JKACrossplatform</Product>
+    <Authors>Jacob Fliss</Authors>
     <PackageIcon>icon.png</PackageIcon>
-
-	  <SelfContained>false</SelfContained>
-	  <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
-
-	  <Version>1.0.0</Version>
-	  <Company>New Age Software LLC</Company>
-	  <Product>JKACrossplatform</Product>
-	  <Authors>Jacob Fliss</Authors>
   </PropertyGroup>
+
+  <!-- Windows-only properties -->
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <ApplicationIcon>..\JkaProtocolProxy.UI\Assets\icon.ico</ApplicationIcon>
+    <ApplicationManifest>app1.manifest</ApplicationManifest>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="..\icon.png">
       <Pack>True</Pack>
