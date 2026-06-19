@@ -91,7 +91,7 @@ jobs:
               exit 1
           }
 
-          Compress-Archive -Path $installer.FullName -DestinationPath "JKA_Proxy-$tag-win-x64.zip"
+          Compress-Archive -Path $installer.FullName -DestinationPath "JKACrossplatform-$tag-win-x64.zip"
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -102,12 +102,12 @@ jobs:
 
           # FIX: cd directly into the project's specific build output folder
           cd bin/PublishOutputs/${{ matrix.rid }}/JkaProtocolProxy
-          tar -czf ../../../../../JKA_Proxy-${tag}-${{ matrix.rid }}.tar.gz *
+          tar -czf ../../../../../JKACrossplatform-${tag}-${{ matrix.rid }}.tar.gz *
 
       - name: Create .app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
-          APP=bin/JKA_Proxy.app
+          APP=bin/JKACrossplatform.app
           mkdir -p $APP/Contents/MacOS
           mkdir -p $APP/Contents/Resources
 
@@ -124,7 +124,7 @@ jobs:
             <key>CFBundleName</key>
             <string>JKA Proxy</string>
             <key>CFBundleExecutable</key>
-            <string>JKA_Proxy</string>
+            <string>JKACrossplatform</string>
             <key>CFBundleIdentifier</key>
             <string>com.newagesoftware.jkaproxy</string>
             <key>CFBundleVersion</key>
@@ -145,16 +145,16 @@ jobs:
 
           hdiutil create \
             -volname "JKA Proxy" \
-            -srcfolder bin/JKA_Proxy.app \
+            -srcfolder bin/JKACrossplatform.app \
             -ov -format UDZO \
-            JKA_Proxy-${tag}-osx-arm64.dmg
+            JKACrossplatform-${tag}-osx-arm64.dmg
 
       # Upload runs last so macOS finds its .dmg file
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: JKA_Proxy-${{ matrix.rid }}
-          path: JKA_Proxy-*.${{ matrix.ext }}
+          name: JKACrossplatform-${{ matrix.rid }}
+          path: JKACrossplatform-*.${{ matrix.ext }}
 
   # ---------------- RELEASE ----------------
   release:
