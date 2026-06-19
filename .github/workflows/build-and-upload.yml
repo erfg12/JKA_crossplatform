@@ -104,11 +104,7 @@ jobs:
           # FIX: Notice the trailing wildcard to grab files inside the project subfolder
           cp -r bin/PublishOutputs/osx-arm64/JkaProtocolProxy/* $APP/Contents/MacOS/
           
-          chmod +x $APP/Contents/MacOS/JkaProtocolProxy.UI.Desktop
-          
-          # Fix the executable path to match your Info.plist expectations
-          mv $APP/Contents/MacOS/JkaProtocolProxy.UI.Desktop $APP/Contents/MacOS/JKA_Proxy
-          chmod +x $APP/Contents/MacOS/JKA_Proxy
+          chmod +x $APP/Contents/MacOS/JKACrossplatform
 
           cat > $APP/Contents/Info.plist << EOF
           <?xml version="1.0" encoding="UTF-8"?>
