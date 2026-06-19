@@ -19,12 +19,6 @@ public class JkaProxyEngine
 
     private static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(30);
 
-    public JkaProxyEngine()
-    {
-        _remoteServerEndpoint = new IPEndPoint(IPAddress.Parse(Program.PCGameServerIp), Program.PCGameServerPort);
-        _proxyListener = new UdpClient(Program.PCGameServerPort);
-    }
-
     public async Task RunProxyLoopAsync(CancellationToken cancellationToken)
     {
         // Background timeout watcher

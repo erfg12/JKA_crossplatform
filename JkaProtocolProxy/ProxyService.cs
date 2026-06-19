@@ -5,8 +5,8 @@ namespace JkaProtocolProxy;
 
 public class ProxyService
 {
-    public string ServerIp { get; set; } = "135.125.145.49";
-    public int ServerPort { get; set; } = 29070;
+    public string ServerIp { get; set; }
+    public int ServerPort { get; set; }
 
     private CancellationTokenSource? _cts;
     private Task? _runTask;
@@ -18,9 +18,6 @@ public class ProxyService
     public void Start()
     {
         if (_cts != null) return;
-
-        Program.PCGameServerIp = ServerIp;
-        Program.PCGameServerPort = ServerPort;
 
         // Redirect Console.WriteLine to our event
         _consoleWriter = new EventTextWriter();

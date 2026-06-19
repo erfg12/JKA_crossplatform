@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
 public class Helper
 {
@@ -12,6 +14,13 @@ public class Helper
             }
         }
         return -1;
+    }
+
+    public static string GetLocalIP()
+    {
+        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        socket.Connect("8.8.8.8", 80); // Doesn't actually send traffic
+        return ((IPEndPoint)socket.LocalEndPoint!).Address.ToString();
     }
 
     /// <summary>
