@@ -165,9 +165,20 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./dist
+          # This downloads everything to the current working directory, 
+          # but still separates them into subdirectories by artifact name.
+          path: ./artifacts
+
+      - name: Flatten artifacts for release
+        run: |
+          mkdir ./dist
+          # Find all files inside the downloaded artifact folders and move them to a flat ./dist directory
+          find ./artifacts -type f -exec mv {} ./dist/ \;
+          echo "Files ready for release:"
+          ls -R ./dist
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./dist/**/*
+          # Point to the flattened directory using a simple wildcard
+          files: ./dist/*
