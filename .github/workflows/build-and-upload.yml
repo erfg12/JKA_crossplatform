@@ -53,8 +53,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           dotnet build Uninstaller\Uninstall.csproj `
-            -c Release -r win-x64 `
-            -o bin\PublishOutputs\win-x64\Uninstaller
+            -c Release -r win-x86 `
+            -o bin\PublishOutputs\win-x86\Uninstaller
 
       - name: Build installer (Windows)
         if: runner.os == 'Windows'
