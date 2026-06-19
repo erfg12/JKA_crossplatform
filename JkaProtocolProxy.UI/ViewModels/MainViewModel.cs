@@ -32,6 +32,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isRunning;
 
+    [ObservableProperty] 
+    private string _serverIpText = string.Empty;
+
+    [ObservableProperty] 
+    private string _serverPortText = string.Empty;
+
     private readonly ProxyService _proxy = new();
 
     partial void OnSelectedServerChanged(ServerInfo? value)
@@ -39,6 +45,8 @@ public partial class MainViewModel : ObservableObject
         // Called automatically by CommunityToolkit whenever selection changes
         if (value != null)
         {
+            ServerIpText = value.Address;
+            ServerPortText = value.Port.ToString();
             DetailsText = value.ToString();
         }
     }
@@ -55,15 +63,15 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     public void StartProxy()
     {
-        _proxy.ServerIp = SelectedServer.Address;
-        _proxy.ServerPort = SelectedServer.Port;
+        _proxy.ServerIp = ServerIpText;
+        _proxy.ServerPort = int.TryParse(ServerPortText, out var p) ? p : 0;
 
         // Unsubscribe first to prevent duplicate handlers
         _proxy.OnLog -= OnProxyLog;
         _proxy.OnLog += OnProxyLog;
 
         _proxy.Start();
-        Console.WriteLine($"Sending game client to server: {SelectedServer?.HostName} - {SelectedServer?.Address}:{SelectedServer?.Port}");
+        Console.WriteLine($"Sending game client to server: {ServerIpText}:{ServerPortText}");
         IsRunning = true;
     }
 
