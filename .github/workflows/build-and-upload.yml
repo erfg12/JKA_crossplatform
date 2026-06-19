@@ -38,11 +38,11 @@ jobs:
 
       - name: Restore (Linux)
         if: runner.os == 'Linux'
-        run: dotnet restore JKA_Crossplatform.mac.slnf
+        run: dotnet restore JKA_crossplatform.mac.slnf
 
       - name: Restore (macOS)
         if: runner.os == 'macOS'
-        run: dotnet restore JKA_Crossplatform.mac.slnf
+        run: dotnet restore JKA_crossplatform.mac.slnf
 
       # ---------------- PUBLISH ----------------
       - name: Build main app (Windows)
