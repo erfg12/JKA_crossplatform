@@ -2,6 +2,8 @@
 
 This lets your game console version of JKA (Switch/Switch 2, PS4/PS5) connect to a PC game server.
 
+Video for setup: https://youtu.be/hJBtyvQQGJk
+
 <img width="1072" height="682" alt="image" src="https://github.com/user-attachments/assets/cebe1408-7b9f-4c54-bd01-1f4e308976c0" />
 
 <img width="1072" height="682" alt="image" src="https://github.com/user-attachments/assets/53adfa1a-3d58-4300-a8e1-3fffee74dc34" />
