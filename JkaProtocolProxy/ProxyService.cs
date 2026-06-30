@@ -11,6 +11,7 @@ public class ProxyService
     private CancellationTokenSource? _cts;
     private Task? _runTask;
     private JkaProxyEngine? _currentEngine;
+    private DNSProxyService? _dnsProxy;
 
     public event Action<string>? OnLog;
 
@@ -33,12 +34,10 @@ public class ProxyService
     {
         if (_cts == null) return;
 
-        // 1. Signal cancellation first
         _cts.Cancel();
         _cts.Dispose();
         _cts = null;
 
-        // 2. Explicitly dispose of the engine to force-close the port
         if (_currentEngine != null)
         {
             _currentEngine.Dispose();
@@ -64,17 +63,19 @@ public class ProxyService
         var myIp = GetLocalIP();
         Log($"[INIT] Starting... UDP Redirect To: {myIp}:29070");
 
-        // 1. Instantiate the engine here and save it to the class field
         _currentEngine = new JkaProxyEngine();
+        _dnsProxy = new DNSProxyService();
 
-        // 2. Pass the engine instance into your game proxy runner
         var t1 = Task.Run(() => RunGameProxyAsync(_currentEngine, ct), ct);
         var t2 = Task.Run(() => MatchmakingRedirector.StartHealthListener(80, ct), ct);
         var t3 = Task.Run(() => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070, ct), ct);
 
+        Task udpDNSTask = Task.Run(() => _dnsProxy.RunDNSUdpListener(myIp, ct));
+        Task tcpDNSTask = Task.Run(() => _dnsProxy.RunDNSTcpListener(myIp, ct));
+
         try
         {
-            await Task.WhenAll(t1, t2, t3);
+            await Task.WhenAll(udpDNSTask, tcpDNSTask, t1, t2, t3);
         }
         catch (Exception ex)
         {
