@@ -264,7 +264,7 @@ jobs:
 
   # ---------------- RELEASE ----------------
   release:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/codesign'
     needs: build
     runs-on: ubuntu-latest
     steps:
