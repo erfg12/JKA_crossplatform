@@ -109,7 +109,7 @@ public partial class InstallerForm : Form
             return false;
         }
 
-        var version = FileVersionInfo.GetVersionInfo(Path.Combine(installationPath, "JKACrossplatform.exe")).FileVersion ?? "1.0.0.0";
+        var version = FileVersionInfo.GetVersionInfo(Path.Combine(installationPath, "JKACrossplatform.exe")).FileVersion ?? "1.1.0.0";
 
         key.SetValue("DisplayName", "JKACrossplatform");
         key.SetValue("DisplayVersion", version);
