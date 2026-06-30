@@ -17,4 +17,8 @@
     <InternalsVisibleTo Include="JkaProtocolProxy.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DNS" Version="7.0.0" />
+  </ItemGroup>
+
 </Project>
