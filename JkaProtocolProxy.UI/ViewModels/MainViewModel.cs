@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JKAServerBrowser;
@@ -52,6 +52,12 @@ public partial class MainViewModel : ObservableObject
             ServerIpText = value.Address;
             ServerPortText = value.Port.ToString();
             DetailsText = value.ToString();
+
+            if (IsRunning)
+            {
+                _proxy.ServerIp = value.Address;
+                _proxy.ServerPort = value.Port;
+            }
         }
     }
 
@@ -105,9 +111,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async void StopProxy()
+    public async Task StopProxy()
     {
-        _proxy.StopAsync();
+        await _proxy.StopAsync();
         _proxy.OnLog -= OnProxyLog;
         IsRunning = false;
         Console.WriteLine("proxy server stopped.");

@@ -1,4 +1,4 @@
-﻿using JkaProtocolProxy.Networking;
+using JkaProtocolProxy.Networking;
 using JkaProtocolProxy.OpenJk;
 using System;
 using System.Linq;
@@ -61,7 +61,10 @@ public class JkaProxyEngine : IDisposable
                 byte[] packetBuffer = receiveResult.Buffer;
                 IPEndPoint senderEndpoint = receiveResult.RemoteEndPoint;
 
-                if (!senderEndpoint.Address.Equals(_remoteServerEndpoint.Address))
+                // Cache current target endpoint atomically
+                IPEndPoint targetServerEndpoint = _remoteServerEndpoint;
+
+                if (!senderEndpoint.Address.Equals(targetServerEndpoint.Address))
                 {
                     // --- DIRECTION A: CONSOLE -> SERVER ---
                     lock (_endpointLock)
@@ -80,7 +83,7 @@ public class JkaProxyEngine : IDisposable
                         try
                         {
                             byte[] modifiedBuffer = ModifyPacketInline(packetBuffer);
-                            await _proxyListener.SendAsync(modifiedBuffer, modifiedBuffer.Length, _remoteServerEndpoint);
+                            await _proxyListener.SendAsync(modifiedBuffer, modifiedBuffer.Length, targetServerEndpoint);
                         }
                         catch (Exception ex)
                         {
@@ -208,6 +211,22 @@ public class JkaProxyEngine : IDisposable
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"[{context}]: {message}");
             Console.ResetColor();
+        }
+    }
+
+    public void UpdateRemoteEndpoint(string ip, int port)
+    {
+        if (IPAddress.TryParse(ip, out var address))
+        {
+            lock (_endpointLock)
+            {
+                var newEndpoint = new IPEndPoint(address, port);
+                if (!newEndpoint.Equals(_remoteServerEndpoint))
+                {
+                    _remoteServerEndpoint = newEndpoint;
+                    Console.WriteLine($"[Proxy] Target game server switched to: {_remoteServerEndpoint}");
+                }
+            }
         }
     }
 

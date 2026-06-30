@@ -1,12 +1,39 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 
 namespace JkaProtocolProxy;
 
 public class ProxyService
 {
-    public string ServerIp { get; set; }
-    public int ServerPort { get; set; }
+    private string _serverIp = string.Empty;
+    public string ServerIp
+    {
+        get => _serverIp;
+        set
+        {
+            _serverIp = value;
+            UpdateEngineEndpoint();
+        }
+    }
+
+    private int _serverPort;
+    public int ServerPort
+    {
+        get => _serverPort;
+        set
+        {
+            _serverPort = value;
+            UpdateEngineEndpoint();
+        }
+    }
+
+    private void UpdateEngineEndpoint()
+    {
+        if (_currentEngine != null && !string.IsNullOrEmpty(_serverIp) && _serverPort > 0)
+        {
+            _currentEngine.UpdateRemoteEndpoint(_serverIp, _serverPort);
+        }
+    }
 
     private CancellationTokenSource? _cts;
     private Task? _runTask;
@@ -30,13 +57,11 @@ public class ProxyService
         _runTask = Task.Run(() => RunAllAsync(_cts.Token));
     }
 
-    public void StopAsync()
+    public async Task StopAsync()
     {
         if (_cts == null) return;
 
         _cts.Cancel();
-        _cts.Dispose();
-        _cts = null;
 
         if (_currentEngine != null)
         {
@@ -44,7 +69,21 @@ public class ProxyService
             _currentEngine = null;
         }
 
-        _runTask = null;
+        if (_runTask != null)
+        {
+            try
+            {
+                await _runTask;
+            }
+            catch (Exception ex)
+            {
+                // Task.WhenAll or individual tasks might throw when closed, which is fine
+            }
+            _runTask = null;
+        }
+
+        _cts.Dispose();
+        _cts = null;
 
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
         _consoleWriter = null;
@@ -59,22 +98,22 @@ public class ProxyService
 
     private async Task RunAllAsync(CancellationToken ct)
     {
-        FirewallManager.OpenPorts();
-        var myIp = GetLocalIP();
-        Log($"[INIT] Starting... UDP Redirect To: {myIp}:29070");
-
-        _currentEngine = new JkaProxyEngine();
-        _dnsProxy = new DNSProxyService();
-
-        var t1 = Task.Run(() => RunGameProxyAsync(_currentEngine, ct), ct);
-        var t2 = Task.Run(() => MatchmakingRedirector.StartHealthListener(80, ct), ct);
-        var t3 = Task.Run(() => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070, ct), ct);
-
-        Task udpDNSTask = Task.Run(() => _dnsProxy.RunDNSUdpListener(myIp, ct));
-        Task tcpDNSTask = Task.Run(() => _dnsProxy.RunDNSTcpListener(myIp, ct));
-
         try
         {
+            FirewallManager.OpenPorts();
+            var myIp = GetLocalIP();
+            Log($"[INIT] Starting... UDP Redirect To: {myIp}:29070");
+
+            _currentEngine = new JkaProxyEngine();
+            _dnsProxy = new DNSProxyService();
+
+            var t1 = Task.Run(() => RunGameProxyAsync(_currentEngine, ct), ct);
+            var t2 = Task.Run(() => MatchmakingRedirector.StartHealthListener(80, ct), ct);
+            var t3 = Task.Run(() => MatchmakingRedirector.StartUdpListenerAsync(30000, myIp, 29070, ct), ct);
+
+            Task udpDNSTask = Task.Run(() => _dnsProxy.RunDNSUdpListener(myIp, ct));
+            Task tcpDNSTask = Task.Run(() => _dnsProxy.RunDNSTcpListener(myIp, ct));
+
             await Task.WhenAll(udpDNSTask, tcpDNSTask, t1, t2, t3);
         }
         catch (Exception ex)
@@ -82,6 +121,11 @@ public class ProxyService
             // When StopAsync closes the socket, Task.WhenAll will throw an exception.
             // Catching it here prevents your background worker from crashing silently.
             Log($"[INIT] Pipelines stopped: {ex.Message}");
+        }
+        finally
+        {
+            FirewallManager.ClosePorts();
+            Log("[INIT] Firewall ports closed.");
         }
     }
 

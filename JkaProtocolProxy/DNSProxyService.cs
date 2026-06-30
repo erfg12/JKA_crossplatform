@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -16,54 +16,73 @@ namespace JkaProtocolProxy
 
         public async Task RunDNSUdpListener(string spoofedIp, CancellationToken ct)
         {
-            using UdpClient listener = new UdpClient(new IPEndPoint(IPAddress.Any, DnsPort));
-            Console.WriteLine("[SUCCESS] Listening on UDP Port 53.");
-
-            while (!ct.IsCancellationRequested)
+            try
             {
-                try
+                using UdpClient listener = new UdpClient(new IPEndPoint(IPAddress.Any, DnsPort));
+                Console.WriteLine("[SUCCESS] Listening on UDP Port 53.");
+
+                using (ct.Register(() => listener.Close()))
                 {
-                    UdpReceiveResult receivedResult = await listener.ReceiveAsync();
-                    byte[] requestBytes = receivedResult.Buffer;
-
-                    IRequest request = Request.FromArray(requestBytes);
-
-                    if (request.Questions != null && request.Questions.Count > 0)
+                    while (!ct.IsCancellationRequested)
                     {
-                        string queriedDomain = request.Questions[0].Name.ToString().TrimEnd('.');
-
-                        if (queriedDomain.Equals(TargetDomain, StringComparison.OrdinalIgnoreCase))
+                        try
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine($"[DNS UDP] Intercepted Request: {queriedDomain} Spoofing response pointing to -> {spoofedIp}");
+                            UdpReceiveResult receivedResult = await listener.ReceiveAsync(ct);
+                            byte[] requestBytes = receivedResult.Buffer;
 
-                            Response response = Response.FromRequest(request);
-                            IResourceRecord record = new IPAddressResourceRecord(
-                                request.Questions[0].Name,
-                                IPAddress.Parse(spoofedIp)
-                            );
-                            response.AnswerRecords.Add(record);
+                            IRequest request = Request.FromArray(requestBytes);
 
-                            byte[] responseBytes = response.ToArray();
-                            await listener.SendAsync(responseBytes, responseBytes.Length, receivedResult.RemoteEndPoint);
+                            if (request.Questions != null && request.Questions.Count > 0)
+                            {
+                                string queriedDomain = request.Questions[0].Name.ToString().TrimEnd('.');
+
+                                if (queriedDomain.Equals(TargetDomain, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.WriteLine($"[DNS UDP] Intercepted Request: {queriedDomain} Spoofing response pointing to -> {spoofedIp}");
+
+                                    Response response = Response.FromRequest(request);
+                                    IResourceRecord record = new IPAddressResourceRecord(
+                                        request.Questions[0].Name,
+                                        IPAddress.Parse(spoofedIp)
+                                    );
+                                    response.AnswerRecords.Add(record);
+
+                                    byte[] responseBytes = response.ToArray();
+                                    await listener.SendAsync(responseBytes, responseBytes.Length, receivedResult.RemoteEndPoint);
+                                }
+                                else
+                                {
+                                    using UdpClient forwarder = new UdpClient();
+                                    IPEndPoint upstreamEndPoint = new IPEndPoint(IPAddress.Parse(UpstreamDns), DnsPort);
+
+                                    await forwarder.SendAsync(requestBytes, requestBytes.Length, upstreamEndPoint);
+                                    UdpReceiveResult upstreamResult = await forwarder.ReceiveAsync();
+                                    byte[] upstreamResponseBytes = upstreamResult.Buffer;
+
+                                    await listener.SendAsync(upstreamResponseBytes, upstreamResponseBytes.Length, receivedResult.RemoteEndPoint);
+                                }
+                            }
                         }
-                        else
+                        catch (Exception ex) when (ct.IsCancellationRequested || ex is OperationCanceledException || ex is ObjectDisposedException)
                         {
-                            using UdpClient forwarder = new UdpClient();
-                            IPEndPoint upstreamEndPoint = new IPEndPoint(IPAddress.Parse(UpstreamDns), DnsPort);
-
-                            await forwarder.SendAsync(requestBytes, requestBytes.Length, upstreamEndPoint);
-                            UdpReceiveResult upstreamResult = await forwarder.ReceiveAsync();
-                            byte[] upstreamResponseBytes = upstreamResult.Buffer;
-
-                            await listener.SendAsync(upstreamResponseBytes, upstreamResponseBytes.Length, receivedResult.RemoteEndPoint);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine($"[DNS UDP] Skipped malformed packet: {ex.Message}");
+                            Console.ResetColor();
                         }
                     }
                 }
-                catch (Exception ex)
+            }
+            catch (SocketException ex)
+            {
+                if (!ct.IsCancellationRequested)
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"[DNS UDP] Skipped malformed packet: {ex.Message}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[DNS UDP - CRITICAL] Could not bind to UDP port {DnsPort}. Port may be locked by another application. Message: {ex.Message}");
                     Console.ResetColor();
                 }
             }
@@ -72,13 +91,33 @@ namespace JkaProtocolProxy
         public async Task RunDNSTcpListener(string spoofedIp, CancellationToken ct)
         {
             TcpListener listener = new TcpListener(IPAddress.Any, DnsPort);
-            listener.Start();
-            Console.WriteLine("[DNS] Listening on TCP Port 53.");
-
-            while (!ct.IsCancellationRequested)
+            try
             {
-                TcpClient client = await listener.AcceptTcpClientAsync();
-                _ = Task.Run(() => HandleTcpClient(client, spoofedIp));
+                listener.Start();
+                Console.WriteLine("[DNS] Listening on TCP Port 53.");
+
+                using (ct.Register(() => listener.Stop()))
+                {
+                    while (!ct.IsCancellationRequested)
+                    {
+                        TcpClient client = await listener.AcceptTcpClientAsync(ct);
+                        _ = Task.Run(() => HandleTcpClient(client, spoofedIp));
+                    }
+                }
+            }
+            catch (Exception ex) when (ct.IsCancellationRequested || ex is OperationCanceledException || ex is ObjectDisposedException)
+            {
+                // Expected on cancellation
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[DNS TCP - ERROR] Exception in DNS TCP listener: {ex.Message}");
+                Console.ResetColor();
+            }
+            finally
+            {
+                listener.Stop();
             }
         }
 

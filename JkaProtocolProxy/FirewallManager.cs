@@ -25,6 +25,85 @@ public static class FirewallManager
             throw new PlatformNotSupportedException("Firewall management not supported on this platform.");
     }
 
+    public static void ClosePorts()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                RemoveWindows();
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                RemoveMacOS();
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                RemoveLinux();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FirewallManager] Error closing ports: {ex.Message}");
+        }
+    }
+
+    private static void RemoveWindows()
+    {
+        try
+        {
+            Type firewallPolicyType = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
+            dynamic firewallPolicy = Activator.CreateInstance(firewallPolicyType);
+            dynamic firewallRules = firewallPolicy.Rules;
+
+            foreach (var rule in Rules)
+            {
+                var name = $"JkaProtocolProxy-{rule.Protocol}-{rule.Port}";
+                try
+                {
+                    firewallRules.Remove(name);
+                }
+                catch
+                {
+                    // Rule might not exist, ignore
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FirewallManager] Failed to remove Windows firewall rules: {ex.Message}");
+        }
+    }
+
+    private static void RemoveMacOS()
+    {
+        if (File.Exists("/etc/pf.anchors/JkaProtocolProxy"))
+        {
+            try
+            {
+                File.Delete("/etc/pf.anchors/JkaProtocolProxy");
+                RunProcess("pfctl", "-f /etc/pf.conf");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FirewallManager] Failed to remove macOS firewall rules: {ex.Message}");
+            }
+        }
+    }
+
+    private static void RemoveLinux()
+    {
+        foreach (var rule in Rules)
+        {
+            while (true)
+            {
+                try
+                {
+                    // iptables returns non-zero when the rule is not found, which breaks the loop
+                    RunProcess("iptables", $"-D INPUT -p {rule.Protocol.ToLower()} --dport {rule.Port} -j ACCEPT");
+                }
+                catch
+                {
+                    break;
+                }
+            }
+        }
+    }
+
     private static void ApplyWindows()
     {
         // Load the Windows Firewall Policy Manager via COM
