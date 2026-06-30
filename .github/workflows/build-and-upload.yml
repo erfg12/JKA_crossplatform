@@ -2,9 +2,10 @@ name: Build & Release
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
 
 jobs:
   build:
@@ -56,6 +57,28 @@ jobs:
             -c Release -r win-x86 `
             -o bin\PublishOutputs\win-x86\Uninstaller
 
+      - name: Azure login (Windows)
+        if: runner.os == 'Windows'
+        uses: azure/login@v2
+        with:
+          client-id: '7ff2d667-5b6e-473c-a899-cfd5b3571e94'
+          tenant-id: '62458d29-be67-4398-a671-f4f08e173649'
+          allow-no-subscriptions: true
+
+      - name: Sign Main App & Uninstaller (Windows)
+        if: runner.os == 'Windows'
+        uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT || 'https://eus.codesigning.azure.net/' }}
+          signing-account-name: 'CodeSignCert'
+          certificate-profile-name: 'CodeCert'
+          files-folder: '${{ github.workspace }}\bin\PublishOutputs'
+          files-folder-filter: 'exe,dll'
+          files-folder-recurse: true
+          file-digest: 'SHA256'
+          timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
+          timestamp-digest: 'SHA256'
+
       - name: Build installer (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -63,6 +86,19 @@ jobs:
             -c Release -r win-x64 --self-contained true `
             -p:PublishSingleFile=true `
             -o bin\PublishOutputs\win-x64\Installer
+
+      - name: Sign Installer (Windows)
+        if: runner.os == 'Windows'
+        uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT || 'https://eus.codesigning.azure.net/' }}
+          signing-account-name: 'CodeSignCert'
+          certificate-profile-name: 'CodeCert'
+          files-folder: '${{ github.workspace }}\bin\PublishOutputs\win-x64\Installer'
+          files-folder-filter: 'exe'
+          file-digest: 'SHA256'
+          timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
+          timestamp-digest: 'SHA256'
 
       - name: Publish (macOS)
         if: runner.os == 'macOS'
